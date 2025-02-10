@@ -87,7 +87,12 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      backgroundColor: Colors.blue.shade50,
+      appBar: AppBar(
+        backgroundColor: Colors.blue.shade100,
+        title: const Text('Login', style: TextStyle(color: Colors.blueGrey)),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -95,12 +100,29 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
               keyboardType: TextInputType.emailAddress,
             ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
               obscureText: true,
             ),
             Row(
@@ -136,7 +158,17 @@ class _LoginPageState extends State<LoginPage> {
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: _login,
-                    child: const Text('Login'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade200,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 50, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: const Text('Login',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
             TextButton(
               onPressed: () {

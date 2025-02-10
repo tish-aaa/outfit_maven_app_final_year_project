@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_page.dart'; // Import Login Page
 import 'home_page.dart'; // Import Home Page
-import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +17,20 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.blue.shade100,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.blueGrey),
+          titleTextStyle: const TextStyle(
+            color: Colors.blueGrey,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+      ),
       home: AuthWrapper(), // Decide where to go based on auth state
     );
   }
@@ -33,7 +46,9 @@ class AuthWrapper extends StatelessWidget {
           final user = snapshot.data;
           return user == null ? LoginPage() : HomePage(); // Navigate based on user status
         }
-        return const Center(child: CircularProgressIndicator());
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
       },
     );
   }
