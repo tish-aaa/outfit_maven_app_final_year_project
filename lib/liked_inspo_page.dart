@@ -2,30 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'navbar.dart';
 
-class HomePage extends StatefulWidget {
+class LikedInspoPage extends StatefulWidget {
   @override
-  _HomePageState createState() => _HomePageState();
+  _LikedInspoPageState createState() => _LikedInspoPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _LikedInspoPageState extends State<LikedInspoPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  List<Map<String, String>> posts = [
-    {
-      "id": "1",
-      "imageUrl": "https://images.unsplash.com/photo-1519999482648-25049ddd37b1",
-      "caption": "Casual Street Style",
-    },
-    {
-      "id": "2",
-      "imageUrl": "https://images.unsplash.com/photo-1542223616-787c38359942",
-      "caption": "Classic Formal Outfit",
-    },
-    {
-      "id": "3",
-      "imageUrl": "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c",
-      "caption": "Elegant Evening Wear",
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -34,13 +17,21 @@ class _HomePageState extends State<HomePage> {
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
       drawer: CustomDrawer(),
       endDrawer: CustomEndDrawer(),
-      body: ListView.builder(
-        itemCount: posts.length,
-        itemBuilder: (context, index) {
-          return PostCard(
-            postId: posts[index]["id"]!,
-            imageUrl: posts[index]["imageUrl"]!,
-            caption: posts[index]["caption"]!,
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance.collection('liked_posts').snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+          if (snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No liked posts yet."));
+          }
+          return ListView(
+            children: snapshot.data!.docs.map((doc) {
+              return PostCard(
+                postId: doc.id,
+                imageUrl: doc['imageUrl'],
+                caption: doc['caption'],
+              );
+            }).toList(),
           );
         },
       ),
@@ -64,40 +55,14 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard> {
-  bool isLiked = false;
+  bool isLiked = true;
   TextEditingController _commentController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    checkIfLiked();
-  }
-
-  void checkIfLiked() async {
-    FirebaseFirestore.instance
-        .collection('liked_posts')
-        .doc(widget.postId)
-        .snapshots()
-        .listen((doc) {
-      setState(() {
-        isLiked = doc.exists;
-      });
-    });
-  }
-
   void toggleLike() async {
+    await FirebaseFirestore.instance.collection('liked_posts').doc(widget.postId).delete();
     setState(() {
-      isLiked = !isLiked;
+      isLiked = false;
     });
-
-    if (isLiked) {
-      await FirebaseFirestore.instance.collection('liked_posts').doc(widget.postId).set({
-        'imageUrl': widget.imageUrl,
-        'caption': widget.caption,
-      });
-    } else {
-      await FirebaseFirestore.instance.collection('liked_posts').doc(widget.postId).delete();
-    }
   }
 
   void addComment() {

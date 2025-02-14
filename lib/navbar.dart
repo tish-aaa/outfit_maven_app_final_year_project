@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'contact_page.dart';
 import 'login_page.dart';
+import 'liked_inspo_page.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -76,7 +77,10 @@ class CustomDrawer extends StatelessWidget {
             leading: const Icon(Icons.favorite, color: Colors.blueGrey),
             title: const Text('Liked Inspo'),
             onTap: () {
-              Navigator.pop(context);  // Add link for liked inspo here later
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LikedInspoPage()),
+              );
             },
           ),
           ListTile(
