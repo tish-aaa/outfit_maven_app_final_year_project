@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart'; // Import the login screen
+import 'contact_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -92,7 +93,7 @@ class _HomePageState extends State<HomePage> {
               leading: const Icon(Icons.contact_mail, color: Colors.blueGrey),
               title: const Text('Contact'),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ContactPage()));
               },
             ),
           ],
