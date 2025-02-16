@@ -5,8 +5,14 @@ import 'post_card.dart';
 
 class LikedInspoPage extends StatefulWidget {
   final String userId;
+  final String userName;
+  final String profileImageUrl;
 
-  const LikedInspoPage({required this.userId});
+  const LikedInspoPage({
+    required this.userId,
+    required this.userName,
+    required this.profileImageUrl,
+  });
 
   @override
   _LikedInspoPageState createState() => _LikedInspoPageState();
@@ -21,25 +27,39 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
       drawer: CustomDrawer(userId: widget.userId),
-      endDrawer: CustomEndDrawer(),
-      body: StreamBuilder(
+      endDrawer: CustomEndDrawer(
+        userName: widget.userName,
+        profileImageUrl: widget.profileImageUrl,
+      ),
+      body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('liked_posts')
             .where('userId', isEqualTo: widget.userId)
             .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
 
-          if (snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(child: Text("No liked posts yet."));
           }
 
           return ListView(
             children: snapshot.data!.docs.map((doc) {
+              final data = doc.data() as Map<String, dynamic>?;
+
+              if (data == null ||
+                  !data.containsKey('postId') ||
+                  !data.containsKey('imageUrl') ||
+                  !data.containsKey('caption')) {
+                return SizedBox.shrink(); // Skip invalid data
+              }
+
               return PostCard(
-                postId: doc['postId'],
-                imageUrl: doc['imageUrl'],
-                caption: doc['caption'],
+                postId: data['postId'],
+                imageUrl: data['imageUrl'],
+                caption: data['caption'],
                 userId: widget.userId,
               );
             }).toList(),

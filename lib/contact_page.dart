@@ -32,7 +32,11 @@ class _ContactPageState extends State<ContactPage> {
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
       drawer: CustomDrawer(userId: userId),
-      endDrawer: CustomEndDrawer(),
+      endDrawer: CustomEndDrawer(
+        userName: "User's Name", // Replace with actual user data
+        profileImageUrl:
+            "URL of the profile image", // Replace with actual image URL
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20.0),
         child: Column(
@@ -50,22 +54,26 @@ class _ContactPageState extends State<ContactPage> {
             ),
             SizedBox(height: 20),
             Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
               elevation: 5,
               child: ListTile(
                 leading: Icon(Icons.email, color: Colors.blueAccent, size: 30),
-                title: Text("Email Us", style: TextStyle(fontWeight: FontWeight.bold)),
+                title: Text("Email Us",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text("contact@outfitmaven.com"),
                 onTap: () => _launchURL("mailto:contact@outfitmaven.com"),
               ),
             ),
             SizedBox(height: 10),
             Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
               elevation: 5,
               child: ListTile(
                 leading: Icon(Icons.phone, color: Colors.green, size: 30),
-                title: Text("Call Us", style: TextStyle(fontWeight: FontWeight.bold)),
+                title: Text("Call Us",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text("+123 456 7890"),
                 onTap: () => _launchURL("tel:+1234567890"),
               ),
@@ -88,26 +96,33 @@ class _ContactPageState extends State<ContactPage> {
                 IconButton(
                   icon: FaIcon(FontAwesomeIcons.facebook, color: Colors.blue),
                   iconSize: 40,
-                  onPressed: () => _launchURL("https://facebook.com/outfitmaven"),
+                  onPressed: () =>
+                      _launchURL("https://facebook.com/outfitmaven"),
                 ),
                 SizedBox(width: 15),
                 IconButton(
                   icon: FaIcon(FontAwesomeIcons.instagram, color: Colors.pink),
                   iconSize: 40,
-                  onPressed: () => _launchURL("https://instagram.com/outfitmaven"),
+                  onPressed: () =>
+                      _launchURL("https://instagram.com/outfitmaven"),
                 ),
                 SizedBox(width: 15),
                 IconButton(
-                  icon: FaIcon(FontAwesomeIcons.twitter, color: Colors.lightBlue),
+                  icon:
+                      FaIcon(FontAwesomeIcons.twitter, color: Colors.lightBlue),
                   iconSize: 40,
-                  onPressed: () => _launchURL("https://twitter.com/outfitmaven"),
+                  onPressed: () =>
+                      _launchURL("https://twitter.com/outfitmaven"),
                 ),
               ],
             ),
             SizedBox(height: 30),
             Text(
               'Feedback:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent),
             ),
             SizedBox(height: 10),
             TextField(

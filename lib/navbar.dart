@@ -4,6 +4,7 @@ import 'home_page.dart';
 import 'contact_page.dart';
 import 'login_page.dart';
 import 'liked_inspo_page.dart';
+import 'profile_page.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -21,8 +22,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         },
       ),
       title: Center(
-        child: Image.network(
-          'https://via.placeholder.com/120x40.png?text=Outfit+Maven',
+        child: Image.asset(
+          'assets/logo.jpg',
           height: 40,
         ),
       ),
@@ -42,56 +43,56 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class CustomDrawer extends StatelessWidget {
-  final String userId; // Accept userId
+  final String userId;
 
   const CustomDrawer({required this.userId});
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
           DrawerHeader(
             decoration: BoxDecoration(color: Colors.blue.shade200),
             child: Center(
-              child: Image.network(
-                'https://via.placeholder.com/150.png?text=Outfit+Maven',
-                height: 80,
-              ),
+              child: Image.asset('assets/logo.jpg', height: 80),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.home, color: Colors.blueGrey),
-            title: const Text('Home'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        HomePage(userId: userId)), // Pass userId
-              );
-            },
+          Expanded(
+            child: ListView(
+              children: [
+                _buildDrawerItem(Icons.home, () => HomePage(userId: userId), context),
+                _buildDrawerItem(Icons.info, () {}, context),
+                _buildDrawerItem(Icons.favorite, () => LikedInspoPage(userId: userId), context),
+                _buildDrawerItem(Icons.checkroom, () {}, context),
+                _buildDrawerItem(Icons.quiz, () {}, context),
+                _buildDrawerItem(Icons.contact_mail, () => ContactPage(), context),
+              ],
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.favorite, color: Colors.blueGrey),
-            title: const Text('Liked Inspo'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        LikedInspoPage(userId: userId)), // Pass userId
-              );
-            },
-          ),
+          SizedBox(height: 20),
+          Image.asset('assets/logo.jpg', height: 50),
         ],
       ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, Function page, BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.blueGrey),
+      onTap: () {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => page()));
+      },
     );
   }
 }
 
 class CustomEndDrawer extends StatelessWidget {
+  final String userName;
+  final String profileImageUrl;
+
+  const CustomEndDrawer({required this.userName, required this.profileImageUrl});
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -103,19 +104,21 @@ class CustomEndDrawer extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.account_circle, size: 80, color: Colors.white),
+                  CircleAvatar(
+                    backgroundImage: NetworkImage(profileImageUrl),
+                    radius: 40,
+                  ),
                   SizedBox(height: 10),
-                  Text("User Profile",
-                      style: TextStyle(color: Colors.white, fontSize: 20)),
+                  Text(userName, style: TextStyle(color: Colors.white, fontSize: 20)),
                 ],
               ),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.person, color: Colors.blueGrey),
-            title: const Text('View Profile'),
+            title: const Text('My Profile'),
             onTap: () {
-              Navigator.pop(context); // Add link for profile page here later
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
             },
           ),
           ListTile(
@@ -123,14 +126,61 @@ class CustomEndDrawer extends StatelessWidget {
             title: const Text('Logout'),
             onTap: () {
               FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage()));
             },
           ),
         ],
       ),
+    );
+  }
+}
+
+class CustomBottomNavBar extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const CustomBottomNavBar({required this.currentIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8EC5FC), Color(0xFFE0C3FC)], // Blue to Light Lavender Gradient
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: currentIndex,
+        onTap: onTap,
+        backgroundColor: Colors.transparent, // Let the gradient be visible
+        elevation: 0,
+        items: [
+          _buildNavItem(Icons.home, 0),
+          _buildNavItem(Icons.checkroom, 1),
+          _buildNavItem(Icons.favorite, 2),
+        ],
+      ),
+    );
+  }
+
+  BottomNavigationBarItem _buildNavItem(IconData icon, int index) {
+    return BottomNavigationBarItem(
+      icon: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: currentIndex == index ? Colors.blue.shade100.withOpacity(0.6) : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: currentIndex == index ? Colors.blueAccent : Colors.blueGrey),
+      ),
+      label: "", // No labels, only icons
     );
   }
 }
