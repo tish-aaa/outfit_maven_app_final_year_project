@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_page.dart';
 import 'navbar.dart';
 
@@ -13,9 +14,9 @@ class _ContactPageState extends State<ContactPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
+    Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.platformDefault);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not open link: $url')),
@@ -25,10 +26,12 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
+    final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(),
+      drawer: CustomDrawer(userId: userId),
       endDrawer: CustomEndDrawer(),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20.0),
@@ -118,7 +121,10 @@ class _ContactPageState extends State<ContactPage> {
             Center(
               child: ElevatedButton(
                 onPressed: () {}, // Add function to send feedback
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                ),
                 child: Text('Submit Feedback'),
               ),
             )

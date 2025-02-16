@@ -44,7 +44,7 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.active) {
           final user = snapshot.data;
-          return user == null ? LoginPage() : HomePage(); // Navigate based on user status
+          return user == null ? LoginPage() : HomePage(userId: user.uid); // Pass userId to HomePage
         }
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart';
 import 'contact_page.dart';
 import 'login_page.dart';
@@ -41,6 +42,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class CustomDrawer extends StatelessWidget {
+  final String userId; // Accept userId
+
+  const CustomDrawer({required this.userId});
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -62,15 +67,10 @@ class CustomDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => HomePage()),
+                MaterialPageRoute(
+                    builder: (context) =>
+                        HomePage(userId: userId)), // Pass userId
               );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.shopping_bag, color: Colors.blueGrey),
-            title: const Text('Outfits'),
-            onTap: () {
-              Navigator.pop(context);  // Add link for the outfits page here later
             },
           ),
           ListTile(
@@ -79,17 +79,9 @@ class CustomDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => LikedInspoPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.contact_mail, color: Colors.blueGrey),
-            title: const Text('Contact'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ContactPage()),
+                MaterialPageRoute(
+                    builder: (context) =>
+                        LikedInspoPage(userId: userId)), // Pass userId
               );
             },
           ),
@@ -113,7 +105,8 @@ class CustomEndDrawer extends StatelessWidget {
                 children: [
                   Icon(Icons.account_circle, size: 80, color: Colors.white),
                   SizedBox(height: 10),
-                  Text("User Profile", style: TextStyle(color: Colors.white, fontSize: 20)),
+                  Text("User Profile",
+                      style: TextStyle(color: Colors.white, fontSize: 20)),
                 ],
               ),
             ),
@@ -122,13 +115,14 @@ class CustomEndDrawer extends StatelessWidget {
             leading: const Icon(Icons.person, color: Colors.blueGrey),
             title: const Text('View Profile'),
             onTap: () {
-              Navigator.pop(context);  // Add link for profile page here later
+              Navigator.pop(context); // Add link for profile page here later
             },
           ),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.blueGrey),
             title: const Text('Logout'),
             onTap: () {
+              FirebaseAuth.instance.signOut();
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => LoginPage()),

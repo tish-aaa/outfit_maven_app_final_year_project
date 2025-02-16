@@ -3,6 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'navbar.dart';
 
 class LikedInspoPage extends StatefulWidget {
+  final String userId;
+
+  const LikedInspoPage({required this.userId});
+
   @override
   _LikedInspoPageState createState() => _LikedInspoPageState();
 }
@@ -15,21 +19,27 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(),
+      drawer: CustomDrawer(userId: widget.userId),
       endDrawer: CustomEndDrawer(),
       body: StreamBuilder(
-        stream: FirebaseFirestore.instance.collection('liked_posts').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('liked_posts')
+            .where('userId', isEqualTo: widget.userId)
+            .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+
           if (snapshot.data!.docs.isEmpty) {
             return Center(child: Text("No liked posts yet."));
           }
+
           return ListView(
             children: snapshot.data!.docs.map((doc) {
               return PostCard(
                 postId: doc.id,
                 imageUrl: doc['imageUrl'],
                 caption: doc['caption'],
+                userId: widget.userId,
               );
             }).toList(),
           );
@@ -43,11 +53,13 @@ class PostCard extends StatefulWidget {
   final String postId;
   final String imageUrl;
   final String caption;
+  final String userId;
 
   const PostCard({
     required this.postId,
     required this.imageUrl,
     required this.caption,
+    required this.userId,
   });
 
   @override
@@ -56,10 +68,14 @@ class PostCard extends StatefulWidget {
 
 class _PostCardState extends State<PostCard> {
   bool isLiked = true;
-  TextEditingController _commentController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
 
-  void toggleLike() async {
-    await FirebaseFirestore.instance.collection('liked_posts').doc(widget.postId).delete();
+  Future<void> toggleLike() async {
+    await FirebaseFirestore.instance
+        .collection('liked_posts')
+        .doc(widget.postId + widget.userId) // Unique doc ID
+        .delete();
+
     setState(() {
       isLiked = false;
     });
@@ -68,8 +84,13 @@ class _PostCardState extends State<PostCard> {
   void addComment() {
     String comment = _commentController.text.trim();
     if (comment.isNotEmpty) {
-      FirebaseFirestore.instance.collection('comments').doc(widget.postId).collection('postComments').add({
+      FirebaseFirestore.instance
+          .collection('comments')
+          .doc(widget.postId)
+          .collection('postComments')
+          .add({
         'comment': comment,
+        'userId': widget.userId,
         'timestamp': Timestamp.now(),
       });
       _commentController.clear();
@@ -89,7 +110,12 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
           child: StreamBuilder(
-            stream: FirebaseFirestore.instance.collection('comments').doc(widget.postId).collection('postComments').orderBy('timestamp', descending: true).snapshots(),
+            stream: FirebaseFirestore.instance
+                .collection('comments')
+                .doc(widget.postId)
+                .collection('postComments')
+                .orderBy('timestamp', descending: true)
+                .snapshots(),
             builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
               if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
               return ListView(
@@ -101,6 +127,7 @@ class _PostCardState extends State<PostCard> {
                     color: Colors.white,
                     child: ListTile(
                       title: Text(doc['comment'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.blueGrey)),
+                      subtitle: Text("User: ${doc['userId']}", style: TextStyle(fontSize: 12, color: Colors.grey)),
                     ),
                   );
                 }).toList(),

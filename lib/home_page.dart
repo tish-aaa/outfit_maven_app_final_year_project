@@ -3,44 +3,42 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'navbar.dart';
 
 class HomePage extends StatefulWidget {
+  final String? userId; // Make userId optional
+
+  const HomePage({Key? key, this.userId}) : super(key: key);
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  List<Map<String, String>> posts = [
-    {
-      "id": "1",
-      "imageUrl": "https://images.unsplash.com/photo-1519999482648-25049ddd37b1",
-      "caption": "Casual Street Style",
-    },
-    {
-      "id": "2",
-      "imageUrl": "https://images.unsplash.com/photo-1542223616-787c38359942",
-      "caption": "Classic Formal Outfit",
-    },
-    {
-      "id": "3",
-      "imageUrl": "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c",
-      "caption": "Elegant Evening Wear",
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(),
+      drawer: CustomDrawer(userId: widget.userId ?? ''),  // Pass userId to drawer
       endDrawer: CustomEndDrawer(),
-      body: ListView.builder(
-        itemCount: posts.length,
-        itemBuilder: (context, index) {
-          return PostCard(
-            postId: posts[index]["id"]!,
-            imageUrl: posts[index]["imageUrl"]!,
-            caption: posts[index]["caption"]!,
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance.collection('posts').snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+
+          if (snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No posts available."));
+          }
+
+          return ListView(
+            children: snapshot.data!.docs.map((doc) {
+              return PostCard(
+                postId: doc.id,
+                imageUrl: doc['imageUrl'],
+                caption: doc['caption'],
+                userId: widget.userId ?? '', // Pass userId here
+              );
+            }).toList(),
           );
         },
       ),
@@ -52,11 +50,13 @@ class PostCard extends StatefulWidget {
   final String postId;
   final String imageUrl;
   final String caption;
+  final String userId;
 
   const PostCard({
     required this.postId,
     required this.imageUrl,
     required this.caption,
+    required this.userId,
   });
 
   @override
@@ -76,34 +76,52 @@ class _PostCardState extends State<PostCard> {
   void checkIfLiked() async {
     FirebaseFirestore.instance
         .collection('liked_posts')
-        .doc(widget.postId)
+        .where('userId', isEqualTo: widget.userId)
+        .where('postId', isEqualTo: widget.postId)
         .snapshots()
-        .listen((doc) {
+        .listen((snapshot) {
       setState(() {
-        isLiked = doc.exists;
+        isLiked = snapshot.docs.isNotEmpty;
       });
     });
   }
 
   void toggleLike() async {
-    setState(() {
-      isLiked = !isLiked;
-    });
+  final likeRef = FirebaseFirestore.instance
+      .collection('liked_posts')
+      .doc(widget.userId + widget.postId);
 
-    if (isLiked) {
-      await FirebaseFirestore.instance.collection('liked_posts').doc(widget.postId).set({
-        'imageUrl': widget.imageUrl,
-        'caption': widget.caption,
-      });
-    } else {
-      await FirebaseFirestore.instance.collection('liked_posts').doc(widget.postId).delete();
-    }
+  final likeSnapshot = await likeRef.get();
+
+  if (likeSnapshot.exists) {
+    await likeRef.delete();
+    setState(() {
+      isLiked = false;
+    });
+  } else {
+    await likeRef.set({
+      'userId': widget.userId,
+      'postId': widget.postId,
+      'imageUrl': widget.imageUrl,
+      'caption': widget.caption,
+      'timestamp': Timestamp.now(),
+    });
+    setState(() {
+      isLiked = true;
+    });
   }
+}
+
 
   void addComment() {
     String comment = _commentController.text.trim();
     if (comment.isNotEmpty) {
-      FirebaseFirestore.instance.collection('comments').doc(widget.postId).collection('postComments').add({
+      FirebaseFirestore.instance
+          .collection('comments')
+          .doc(widget.postId)
+          .collection('postComments')
+          .add({
+        'userId': widget.userId,
         'comment': comment,
         'timestamp': Timestamp.now(),
       });
@@ -115,33 +133,32 @@ class _PostCardState extends State<PostCard> {
     showModalBottomSheet(
       context: context,
       builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.lightBlue.shade50, Colors.lightBlue.shade200],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: StreamBuilder(
-            stream: FirebaseFirestore.instance.collection('comments').doc(widget.postId).collection('postComments').orderBy('timestamp', descending: true).snapshots(),
-            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-              if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-              return ListView(
-                padding: EdgeInsets.all(10),
-                children: snapshot.data!.docs.map((doc) {
-                  return Card(
-                    margin: EdgeInsets.symmetric(vertical: 5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    color: Colors.white,
-                    child: ListTile(
-                      title: Text(doc['comment'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.blueGrey)),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
+        return StreamBuilder(
+          stream: FirebaseFirestore.instance
+              .collection('comments')
+              .doc(widget.postId)
+              .collection('postComments')
+              .orderBy('timestamp', descending: true)
+              .snapshots(),
+          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+            return ListView(
+              padding: EdgeInsets.all(10),
+              children: snapshot.data!.docs.map((doc) {
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  color: Colors.white,
+                  child: ListTile(
+                    title: Text(doc['comment'],
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.blueGrey)),
+                    subtitle: Text("User: ${doc['userId']}",
+                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ),
+                );
+              }).toList(),
+            );
+          },
         );
       },
     );
@@ -161,7 +178,8 @@ class _PostCardState extends State<PostCard> {
           Row(
             children: [
               IconButton(
-                icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border, color: isLiked ? Colors.red : Colors.grey),
+                icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? Colors.red : Colors.grey),
                 onPressed: toggleLike,
               ),
               Expanded(
