@@ -31,7 +31,7 @@ class _ContactPageState extends State<ContactPage> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(userId: userId),
+      drawer: CustomDrawer(userId: userId, userName: userName),
       endDrawer: CustomEndDrawer(
         userName: "User's Name", // Replace with actual user data
         profileImageUrl:

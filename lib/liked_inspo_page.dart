@@ -9,6 +9,7 @@ class LikedInspoPage extends StatefulWidget {
   final String profileImageUrl;
 
   const LikedInspoPage({
+    super.key,
     required this.userId,
     required this.userName,
     required this.profileImageUrl,
@@ -26,7 +27,11 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(userId: widget.userId),
+      drawer: CustomDrawer(
+        userId: widget.userId,
+        userName: widget.userName,
+        profileImageUrl: widget.profileImageUrl,
+      ),
       endDrawer: CustomEndDrawer(
         userName: widget.userName,
         profileImageUrl: widget.profileImageUrl,
@@ -38,11 +43,11 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No liked posts yet."));
+            return const Center(child: Text("No liked posts yet."));
           }
 
           return ListView(
@@ -53,7 +58,7 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
                   !data.containsKey('postId') ||
                   !data.containsKey('imageUrl') ||
                   !data.containsKey('caption')) {
-                return SizedBox.shrink(); // Skip invalid data
+                return const SizedBox.shrink(); // Skip invalid data
               }
 
               return PostCard(
@@ -61,6 +66,7 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
                 imageUrl: data['imageUrl'],
                 caption: data['caption'],
                 userId: widget.userId,
+                userName: widget.userName, // Pass userName if needed
               );
             }).toList(),
           );

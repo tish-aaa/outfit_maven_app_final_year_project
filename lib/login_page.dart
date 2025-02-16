@@ -92,8 +92,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         userId = userCredential.user!.uid;
 
-        DocumentSnapshot userDoc =
-            await _firestore.collection('users').doc(userId).get();
+        DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
         if (userDoc.exists) {
           userName = "${userDoc['firstName']} ${userDoc['lastName']}";
           profileImageUrl = userDoc['profileImageUrl'] ?? '';
@@ -104,10 +103,7 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomePage(
-              userId: userId,
-              userName: userName,
-              profileImageUrl: profileImageUrl),
+          builder: (context) => HomePage(userId: userId, userName: userName, profileImageUrl: profileImageUrl),
         ),
       );
     } on FirebaseAuthException catch (e) {
@@ -125,8 +121,7 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: Colors.blue.shade50,
       appBar: AppBar(
         backgroundColor: Colors.blue.shade100,
-        title: Text(_isRegistering ? 'Register' : 'Login',
-            style: TextStyle(color: Colors.blueGrey)),
+        title: Text(_isRegistering ? 'Register' : 'Login', style: TextStyle(color: Colors.blueGrey)),
         centerTitle: true,
       ),
       body: Padding(
@@ -135,54 +130,20 @@ class _LoginPageState extends State<LoginPage> {
           key: _formKey,
           child: ListView(
             children: [
+              Image.asset(_isRegistering ? 'assets/register.png' : 'assets/login.png', height: 150),
               if (_isRegistering) ...[
-                TextFormField(
-                    controller: _firstNameController,
-                    decoration: InputDecoration(labelText: 'First Name')),
-                TextFormField(
-                    controller: _lastNameController,
-                    decoration: InputDecoration(labelText: 'Last Name')),
-                TextFormField(
-                    controller: _usernameController,
-                    decoration: InputDecoration(labelText: 'Username')),
-                TextFormField(
-                    controller: _dobController,
-                    decoration: InputDecoration(labelText: 'Date of Birth')),
-                TextFormField(
-                    controller: _phoneController,
-                    decoration: InputDecoration(labelText: 'Phone No'),
-                    keyboardType: TextInputType.phone),
+                _buildTextField(_firstNameController, 'First Name'),
+                _buildTextField(_lastNameController, 'Last Name'),
+                _buildTextField(_usernameController, 'Username'),
+                _buildTextField(_dobController, 'Date of Birth'),
+                _buildTextField(_phoneController, 'Phone No', keyboardType: TextInputType.phone),
               ],
-              TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
-                  keyboardType: TextInputType.emailAddress),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword
-                        ? Icons.visibility_off
-                        : Icons.visibility),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
-                ),
-                obscureText: _obscurePassword,
-              ),
+              _buildTextField(_emailController, 'Email', keyboardType: TextInputType.emailAddress),
+              _buildPasswordField(),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Checkbox(
-                          value: _rememberMe,
-                          onChanged: (value) =>
-                              setState(() => _rememberMe = value!)),
-                      Text('Remember Me'),
-                    ],
-                  ),
+                  Checkbox(value: _rememberMe, onChanged: (value) => setState(() => _rememberMe = value!)),
+                  Text('Remember Me'),
                 ],
               ),
               SizedBox(height: 16),
@@ -190,21 +151,32 @@ class _LoginPageState extends State<LoginPage> {
                   ? Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _authenticate,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade200),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade200),
                       child: Text(_isRegistering ? 'Register' : 'Login'),
                     ),
               TextButton(
-                onPressed: () =>
-                    setState(() => _isRegistering = !_isRegistering),
-                child: Text(_isRegistering
-                    ? 'Already have an account? Login'
-                    : 'Don’t have an account? Register'),
+                onPressed: () => setState(() => _isRegistering = !_isRegistering),
+                child: Text(_isRegistering ? 'Already have an account? Login' : 'Don’t have an account? Register'),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, {TextInputType keyboardType = TextInputType.text}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
+        keyboardType: keyboardType,
+      ),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return _buildTextField(_passwordController, 'Password'); // Remove `.copyWith()`
   }
 }

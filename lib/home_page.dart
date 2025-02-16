@@ -9,6 +9,7 @@ class HomePage extends StatefulWidget {
   final String profileImageUrl;
 
   const HomePage({
+    super.key,
     required this.userId,
     required this.userName,
     required this.profileImageUrl,
@@ -26,7 +27,11 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(userId: widget.userId),
+      drawer: CustomDrawer(
+        userId: widget.userId, 
+        userName: widget.userName, 
+        profileImageUrl: widget.profileImageUrl,
+      ),
       endDrawer: CustomEndDrawer(
         userName: widget.userName,
         profileImageUrl: widget.profileImageUrl,
@@ -35,11 +40,11 @@ class _HomePageState extends State<HomePage> {
         stream: FirebaseFirestore.instance.collection('posts').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No posts available."));
+            return const Center(child: Text("No posts available."));
           }
 
           return ListView(
@@ -50,7 +55,7 @@ class _HomePageState extends State<HomePage> {
                   !data.containsKey('postId') ||
                   !data.containsKey('imageUrl') ||
                   !data.containsKey('caption')) {
-                return SizedBox.shrink(); // Skip invalid posts
+                return const SizedBox.shrink(); // Skip invalid posts
               }
 
               return PostCard(
@@ -58,6 +63,7 @@ class _HomePageState extends State<HomePage> {
                 imageUrl: data['imageUrl'],
                 caption: data['caption'],
                 userId: widget.userId,
+                userName: widget.userName, // Pass userName if needed
               );
             }).toList(),
           );

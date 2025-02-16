@@ -20,7 +20,7 @@ class PostCard extends StatefulWidget {
 
 class _PostCardState extends State<PostCard> {
   bool isLiked = false;
-  TextEditingController _commentController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
 
   @override
   void initState() {
@@ -28,20 +28,19 @@ class _PostCardState extends State<PostCard> {
     checkIfLiked();
   }
 
-  void checkIfLiked() async {
-    FirebaseFirestore.instance
+  Future<void> checkIfLiked() async {
+    final snapshot = await FirebaseFirestore.instance
         .collection('liked_posts')
         .where('userId', isEqualTo: widget.userId)
         .where('postId', isEqualTo: widget.postId)
-        .snapshots()
-        .listen((snapshot) {
-      setState(() {
-        isLiked = snapshot.docs.isNotEmpty;
-      });
+        .get();
+
+    setState(() {
+      isLiked = snapshot.docs.isNotEmpty;
     });
   }
 
-  void toggleLike() async {
+  Future<void> toggleLike() async {
     final likeRef = FirebaseFirestore.instance
         .collection('liked_posts')
         .doc(widget.userId + widget.postId);
@@ -67,25 +66,21 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
-  void addComment() async {
+  Future<void> addComment() async {
     String comment = _commentController.text.trim();
     if (comment.isNotEmpty) {
       try {
-        // Fetch user details safely
         DocumentSnapshot userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(widget.userId)
             .get();
 
-        // Extract the name safely
         Map<String, dynamic>? userData =
             userDoc.data() as Map<String, dynamic>?;
 
-        String userName = userData != null && userData.containsKey('name')
-            ? userData['name']
-            : "Unknown User"; // Fallback name if missing
+        "User: ${(doc.data() as Map<String, dynamic>)['userName'] ?? 'Unknown User'}",
 
-        // Add comment with username
+
         await FirebaseFirestore.instance
             .collection('comments')
             .doc(widget.postId)
@@ -108,32 +103,39 @@ class _PostCardState extends State<PostCard> {
     showModalBottomSheet(
       context: context,
       builder: (context) {
-        return StreamBuilder(
+        return StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('comments')
               .doc(widget.postId)
               .collection('postComments')
               .orderBy('timestamp', descending: true)
               .snapshots(),
-          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (!snapshot.hasData)
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Center(child: Text("No comments yet."));
+            }
             return ListView(
               padding: EdgeInsets.all(10),
               children: snapshot.data!.docs.map((doc) {
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: 5),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: ListTile(
-                    title: Text(doc['comment'],
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.blueGrey)),
+                    title: Text(
+                      doc['comment'],
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.blueGrey,
+                      ),
+                    ),
                     subtitle: Text(
-                      "User: ${doc.data() != null && (doc.data() as Map<String, dynamic>).containsKey('userName') ? (doc.data() as Map<String, dynamic>)['userName'] : 'Unknown User'}",
+                      "User: ${doc.data()?['userName'] ?? 'Unknown User'}",
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ),
@@ -150,47 +152,64 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.all(10),
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: Column(
         children: [
-          Image.network(widget.imageUrl, height: 250, fit: BoxFit.cover),
+          ClipRRect(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+            child: Image.network(
+              widget.imageUrl,
+              height: 250,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
           Padding(
             padding: EdgeInsets.all(10),
-            child: Text(widget.caption, style: TextStyle(fontSize: 16)),
+            child: Text(
+              widget.caption,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
           ),
           Row(
             children: [
               IconButton(
-                icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: isLiked ? Colors.red : Colors.grey),
+                icon: Icon(
+                  isLiked ? Icons.favorite : Icons.favorite_border,
+                  color: isLiked ? Colors.red : Colors.grey,
+                ),
                 onPressed: toggleLike,
               ),
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 12.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.shade50, Colors.blue.shade100],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  margin: EdgeInsets.only(bottom: 12.0),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade50, Colors.blue.shade100],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: TextField(
-                        controller: _commentController,
-                        decoration: InputDecoration(
-                            hintText: "Add a comment...",
-                            border: InputBorder.none),
-                        onSubmitted: (value) => addComment(),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: TextField(
+                      controller: _commentController,
+                      decoration: InputDecoration(
+                        hintText: "Add a comment...",
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10),
                       ),
+                      onSubmitted: (value) => addComment(),
                     ),
                   ),
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.comment),
+                icon: Icon(Icons.comment, color: Colors.blueGrey),
                 onPressed: showComments,
               ),
             ],

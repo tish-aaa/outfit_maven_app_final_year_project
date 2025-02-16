@@ -33,40 +33,64 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> getUserDetails() async {
     user = _auth.currentUser;
     if (user != null) {
-      DocumentSnapshot userDoc =
-          await _firestore.collection("users").doc(user!.uid).get();
-      setState(() {
-        firstName = userDoc["firstName"];
-        lastName = userDoc["lastName"];
-        email = userDoc["email"];
-        phone = userDoc["phone"];
-        age = userDoc["age"].toString();
-        username = userDoc["username"];
-        profileImageUrl = userDoc["profileImageUrl"] ?? "assets/default_profile.jpg";
-        phoneController.text = phone;
-        ageController.text = age;
-        usernameController.text = username;
-      });
+      try {
+        DocumentSnapshot userDoc =
+            await _firestore.collection("users").doc(user!.uid).get();
+
+        if (userDoc.exists && userDoc.data() != null) {
+          Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+
+          setState(() {
+            firstName = data["firstName"] ?? "";
+            lastName = data["lastName"] ?? "";
+            email = data["email"] ?? "";
+            phone = data["phone"] ?? "";
+            age = data["age"]?.toString() ?? "";
+            username = data["username"] ?? "";
+            profileImageUrl = data["profileImageUrl"] ?? "assets/default_profile.jpg";
+            
+            phoneController.text = phone;
+            ageController.text = age;
+            usernameController.text = username;
+          });
+        }
+      } catch (e) {
+        print("Error fetching user details: $e");
+      }
     }
   }
 
   Future<void> updateProfile() async {
     if (user != null) {
-      await _firestore.collection("users").doc(user!.uid).update({
-        "phone": phoneController.text,
-        "age": ageController.text,
-        "username": usernameController.text,
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Profile updated successfully!")));
+      try {
+        await _firestore.collection("users").doc(user!.uid).update({
+          "phone": phoneController.text.trim(),
+          "age": ageController.text.trim(),
+          "username": usernameController.text.trim(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Profile updated successfully!")),
+        );
+      } catch (e) {
+        print("Error updating profile: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to update profile")),
+        );
+      }
     }
   }
 
   Future<void> resetPassword() async {
     if (user != null) {
-      await _auth.sendPasswordResetEmail(email: user!.email!);
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Password reset link sent to $email")));
+      try {
+        await _auth.sendPasswordResetEmail(email: user!.email!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Password reset link sent to $email")),
+        );
+      } catch (e) {
+        print("Error sending reset password email: $e");
+      }
     }
   }
 
@@ -74,7 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("My Profile")),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -87,56 +111,17 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             SizedBox(height: 20),
-            TextField(
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "First Name",
-                border: OutlineInputBorder(),
-              ),
-              controller: TextEditingController(text: firstName),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "Last Name",
-                border: OutlineInputBorder(),
-              ),
-              controller: TextEditingController(text: lastName),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "Email",
-                border: OutlineInputBorder(),
-              ),
-              controller: TextEditingController(text: email),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: phoneController,
-              decoration: InputDecoration(
-                labelText: "Phone Number",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: ageController,
-              decoration: InputDecoration(
-                labelText: "Age",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: usernameController,
-              decoration: InputDecoration(
-                labelText: "Username",
-                border: OutlineInputBorder(),
-              ),
-            ),
+            ProfileInfo(title: "First Name", value: firstName),
+            SizedBox(height: 15),
+            ProfileInfo(title: "Last Name", value: lastName),
+            SizedBox(height: 15),
+            ProfileInfo(title: "Email", value: email),
+            SizedBox(height: 15),
+            EditableTextField(controller: phoneController, label: "Phone Number"),
+            SizedBox(height: 15),
+            EditableTextField(controller: ageController, label: "Age"),
+            SizedBox(height: 15),
+            EditableTextField(controller: usernameController, label: "Username"),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: updateProfile,
@@ -148,6 +133,50 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ProfileInfo extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const ProfileInfo({required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(value, style: TextStyle(fontSize: 16)),
+        ),
+      ],
+    );
+  }
+}
+
+class EditableTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+
+  const EditableTextField({required this.controller, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(),
       ),
     );
   }

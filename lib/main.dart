@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_page.dart'; // Import Login Page
 import 'home_page.dart'; // Import Home Page
 
@@ -44,7 +45,33 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.active) {
           final user = snapshot.data;
-          return user == null ? LoginPage() : HomePage(userId: user.uid); // Pass userId to HomePage
+
+          if (user == null) {
+            return LoginPage();
+          } else {
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return LoginPage();
+                }
+
+                String userName = "${snapshot.data!['firstName']} ${snapshot.data!['lastName']}";
+                String profileImageUrl = snapshot.data!['profileImageUrl'] ?? '';
+
+                return HomePage(
+                  userId: user.uid, 
+                  userName: userName, 
+                  profileImageUrl: profileImageUrl,
+                );
+              },
+            );
+          }
         }
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
