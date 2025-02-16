@@ -19,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isRegistering = false;
   bool _loading = false;
   bool _rememberMe = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -131,9 +132,26 @@ class _LoginPageState extends State<LoginPage> {
               ),
               TextFormField(
                 controller: _passwordController,
-                decoration: InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator: (value) => value!.length < 6 ? 'Password must be at least 6 characters' : null,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+                obscureText: _obscurePassword,
+                validator: (value) {
+                  if (value == null || value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  if (!RegExp(r'(?=.*?[#?!@$%^&*-])').hasMatch(value)) {
+                    return 'Password must contain at least one special character';
+                  }
+                  if (!RegExp(r'(?=.*?[0-9])').hasMatch(value)) {
+                    return 'Password must contain at least one number';
+                  }
+                  return null;
+                },
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
