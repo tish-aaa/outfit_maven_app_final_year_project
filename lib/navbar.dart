@@ -96,8 +96,7 @@ class CustomDrawer extends StatelessWidget {
                     context),
                 _buildDrawerItem(Icons.checkroom, () {}, context),
                 _buildDrawerItem(Icons.quiz, () {}, context),
-                _buildDrawerItem(
-                    Icons.contact_mail, () => ContactPage(), context),  // Removed `const`
+                _buildDrawerItem(Icons.contact_mail, () => ContactPage(), context),
               ],
             ),
           ),
@@ -108,7 +107,7 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, Function page, BuildContext context) {
+  Widget _buildDrawerItem(IconData icon, Widget Function() page, BuildContext context) {
     return ListTile(
       leading: Icon(icon, color: Colors.blueGrey),
       onTap: () {
@@ -155,8 +154,8 @@ class CustomEndDrawer extends StatelessWidget {
             leading: const Icon(Icons.person, color: Colors.blueGrey),
             title: const Text('My Profile'),
             onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => ProfilePage());
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => ProfilePage()));
             },
           ),
           ListTile(
@@ -164,8 +163,8 @@ class CustomEndDrawer extends StatelessWidget {
             title: const Text('Logout'),
             onTap: () {
               FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()));
+              Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (context) => LoginPage()));
             },
           ),
         ],

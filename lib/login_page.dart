@@ -94,8 +94,8 @@ class _LoginPageState extends State<LoginPage> {
 
         DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
         if (userDoc.exists) {
-          userName = "${userDoc['firstName']} ${userDoc['lastName']}";
-          profileImageUrl = userDoc['profileImageUrl'] ?? '';
+          userName = "${userDoc.data()?['firstName'] ?? ''} ${userDoc.data()?['lastName'] ?? ''}";
+          profileImageUrl = userDoc.data()?['profileImageUrl'] ?? '';
         }
       }
 
@@ -103,7 +103,11 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomePage(userId: userId, userName: userName, profileImageUrl: profileImageUrl),
+          builder: (context) => HomePage(
+            userId: userId,
+            userName: userName,
+            profileImageUrl: profileImageUrl,
+          ),
         ),
       );
     } on FirebaseAuthException catch (e) {
@@ -115,13 +119,30 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _toggleRegister() {
+    setState(() {
+      _isRegistering = !_isRegistering;
+      _formKey.currentState?.reset();
+      _emailController.clear();
+      _passwordController.clear();
+      _firstNameController.clear();
+      _lastNameController.clear();
+      _usernameController.clear();
+      _dobController.clear();
+      _phoneController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue.shade50,
       appBar: AppBar(
         backgroundColor: Colors.blue.shade100,
-        title: Text(_isRegistering ? 'Register' : 'Login', style: TextStyle(color: Colors.blueGrey)),
+        title: Text(
+          _isRegistering ? 'Register' : 'Login',
+          style: TextStyle(color: Colors.blueGrey),
+        ),
         centerTitle: true,
       ),
       body: Padding(
@@ -130,7 +151,10 @@ class _LoginPageState extends State<LoginPage> {
           key: _formKey,
           child: ListView(
             children: [
-              Image.asset(_isRegistering ? 'assets/register.png' : 'assets/login.png', height: 150),
+              Image.asset(
+                _isRegistering ? 'assets/register.png' : 'assets/login.png',
+                height: 150,
+              ),
               if (_isRegistering) ...[
                 _buildTextField(_firstNameController, 'First Name'),
                 _buildTextField(_lastNameController, 'Last Name'),
@@ -155,8 +179,10 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(_isRegistering ? 'Register' : 'Login'),
                     ),
               TextButton(
-                onPressed: () => setState(() => _isRegistering = !_isRegistering),
-                child: Text(_isRegistering ? 'Already have an account? Login' : 'Don’t have an account? Register'),
+                onPressed: _toggleRegister,
+                child: Text(
+                  _isRegistering ? 'Already have an account? Login' : 'Don’t have an account? Register',
+                ),
               ),
             ],
           ),
@@ -177,6 +203,20 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildPasswordField() {
-    return _buildTextField(_passwordController, 'Password'); // Remove `.copyWith()`
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: _passwordController,
+        obscureText: _obscurePassword,
+        decoration: InputDecoration(
+          labelText: 'Password',
+          border: OutlineInputBorder(),
+          suffixIcon: IconButton(
+            icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+          ),
+        ),
+      ),
+    );
   }
 }

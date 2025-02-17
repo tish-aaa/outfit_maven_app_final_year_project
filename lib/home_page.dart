@@ -51,19 +51,19 @@ class _HomePageState extends State<HomePage> {
             children: snapshot.data!.docs.map((doc) {
               final data = doc.data() as Map<String, dynamic>?;
 
-              if (data == null ||
-                  !data.containsKey('postId') ||
-                  !data.containsKey('imageUrl') ||
+              if (data == null || 
+                  !data.containsKey('postId') || 
+                  !data.containsKey('imageUrl') || 
                   !data.containsKey('caption')) {
                 return const SizedBox.shrink(); // Skip invalid posts
               }
 
               return PostCard(
-                postId: data['postId'],
-                imageUrl: data['imageUrl'],
-                caption: data['caption'],
+                postId: data['postId'] ?? '',
+                imageUrl: data['imageUrl'] ?? '',
+                caption: data['caption'] ?? '',
                 userId: widget.userId,
-                userName: widget.userName, // Pass userName if needed
+                userName: widget.userName, 
               );
             }).toList(),
           );

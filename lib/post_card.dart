@@ -12,6 +12,7 @@ class PostCard extends StatefulWidget {
     required this.imageUrl,
     required this.caption,
     required this.userId,
+    super.key,
   });
 
   @override
@@ -78,8 +79,7 @@ class _PostCardState extends State<PostCard> {
         Map<String, dynamic>? userData =
             userDoc.data() as Map<String, dynamic>?;
 
-        "User: ${(doc.data() as Map<String, dynamic>)['userName'] ?? 'Unknown User'}",
-
+        final userName = userData?['userName'] ?? 'Unknown User';
 
         await FirebaseFirestore.instance
             .collection('comments')
@@ -112,31 +112,33 @@ class _PostCardState extends State<PostCard> {
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return Center(child: Text("No comments yet."));
+              return const Center(child: Text("No comments yet."));
             }
             return ListView(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               children: snapshot.data!.docs.map((doc) {
+                final commentData = doc.data() as Map<String, dynamic>?;
+
                 return Card(
-                  margin: EdgeInsets.symmetric(vertical: 5),
+                  margin: const EdgeInsets.symmetric(vertical: 5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: ListTile(
                     title: Text(
-                      doc['comment'],
-                      style: TextStyle(
+                      commentData?['comment'] ?? 'No comment',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: Colors.blueGrey,
                       ),
                     ),
                     subtitle: Text(
-                      "User: ${doc.data()?['userName'] ?? 'Unknown User'}",
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      "User: ${commentData?['userName'] ?? 'Unknown User'}",
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ),
                 );
@@ -151,7 +153,7 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.all(10),
+      margin: const EdgeInsets.all(10),
       elevation: 3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
@@ -159,7 +161,7 @@ class _PostCardState extends State<PostCard> {
       child: Column(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
             child: Image.network(
               widget.imageUrl,
               height: 250,
@@ -168,10 +170,10 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             child: Text(
               widget.caption,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
           Row(
@@ -185,7 +187,7 @@ class _PostCardState extends State<PostCard> {
               ),
               Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(bottom: 12.0),
+                  margin: const EdgeInsets.only(bottom: 12.0),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Colors.blue.shade50, Colors.blue.shade100],
@@ -195,10 +197,10 @@ class _PostCardState extends State<PostCard> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: TextField(
                       controller: _commentController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: "Add a comment...",
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 10),
@@ -209,7 +211,7 @@ class _PostCardState extends State<PostCard> {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.comment, color: Colors.blueGrey),
+                icon: const Icon(Icons.comment, color: Colors.blueGrey),
                 onPressed: showComments,
               ),
             ],

@@ -65,8 +65,7 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
                 postId: data['postId'],
                 imageUrl: data['imageUrl'],
                 caption: data['caption'],
-                userId: widget.userId,
-                userName: widget.userName, // Pass userName if needed
+                userId: widget.userId, // Removed userName (not in PostCard)
               );
             }).toList(),
           );
