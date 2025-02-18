@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,45 +15,23 @@ class _LoginPageState extends State<LoginPage> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _dobController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
 
   bool _isRegistering = false;
   bool _loading = false;
-  bool _rememberMe = false;
   bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCredentials();
   }
 
-  Future<void> _loadCredentials() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _rememberMe = prefs.getBool('rememberMe') ?? false;
-      if (_rememberMe) {
-        _emailController.text = prefs.getString('email') ?? '';
-        _passwordController.text = prefs.getString('password') ?? '';
-      }
-    });
-  }
-
-  Future<void> _saveCredentials() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (_rememberMe) {
-      await prefs.setString('email', _emailController.text.trim());
-      await prefs.setString('password', _passwordController.text.trim());
-      await prefs.setBool('rememberMe', true);
-    } else {
-      await prefs.remove('email');
-      await prefs.remove('password');
-      await prefs.setBool('rememberMe', false);
-    }
+  Future<bool> _isUsernameTaken(String username) async {
+    final querySnapshot = await _firestore
+        .collection('users')
+        .where('username', isEqualTo: username)
+        .get();
+    return querySnapshot.docs.isNotEmpty;
   }
 
   void _authenticate() async {
@@ -65,9 +42,16 @@ class _LoginPageState extends State<LoginPage> {
       UserCredential userCredential;
       String userId;
       String userName = "";
-      String profileImageUrl = "";
 
       if (_isRegistering) {
+        if (await _isUsernameTaken(_usernameController.text.trim())) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Username is already taken. Choose another one.')),
+          );
+          setState(() => _loading = false);
+          return;
+        }
+
         userCredential = await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -75,16 +59,11 @@ class _LoginPageState extends State<LoginPage> {
         userId = userCredential.user!.uid;
 
         await _firestore.collection('users').doc(userId).set({
-          'firstName': _firstNameController.text.trim(),
-          'lastName': _lastNameController.text.trim(),
           'username': _usernameController.text.trim(),
-          'dob': _dobController.text.trim(),
           'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'profileImageUrl': '',
         });
 
-        userName = "${_firstNameController.text.trim()} ${_lastNameController.text.trim()}";
+        userName = _usernameController.text.trim();
       } else {
         userCredential = await _auth.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
@@ -94,19 +73,17 @@ class _LoginPageState extends State<LoginPage> {
 
         DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
         if (userDoc.exists) {
-          userName = "${userDoc.data()?['firstName'] ?? ''} ${userDoc.data()?['lastName'] ?? ''}";
-          profileImageUrl = userDoc.data()?['profileImageUrl'] ?? '';
+          final data = userDoc.data() as Map<String, dynamic>?;
+          userName = data?['username'] ?? '';
         }
       }
 
-      await _saveCredentials();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => HomePage(
             userId: userId,
             userName: userName,
-            profileImageUrl: profileImageUrl,
           ),
         ),
       );
@@ -125,24 +102,15 @@ class _LoginPageState extends State<LoginPage> {
       _formKey.currentState?.reset();
       _emailController.clear();
       _passwordController.clear();
-      _firstNameController.clear();
-      _lastNameController.clear();
       _usernameController.clear();
-      _dobController.clear();
-      _phoneController.clear();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.blue.shade100,
-        title: Text(
-          _isRegistering ? 'Register' : 'Login',
-          style: TextStyle(color: Colors.blueGrey),
-        ),
+        title: Text(_isRegistering ? 'Register' : 'Login'),
         centerTitle: true,
       ),
       body: Padding(
@@ -151,31 +119,14 @@ class _LoginPageState extends State<LoginPage> {
           key: _formKey,
           child: ListView(
             children: [
-              Image.asset(
-                _isRegistering ? 'assets/register.png' : 'assets/login.png',
-                height: 150,
-              ),
-              if (_isRegistering) ...[
-                _buildTextField(_firstNameController, 'First Name'),
-                _buildTextField(_lastNameController, 'Last Name'),
-                _buildTextField(_usernameController, 'Username'),
-                _buildTextField(_dobController, 'Date of Birth'),
-                _buildTextField(_phoneController, 'Phone No', keyboardType: TextInputType.phone),
-              ],
+              if (_isRegistering) _buildTextField(_usernameController, 'Username'),
               _buildTextField(_emailController, 'Email', keyboardType: TextInputType.emailAddress),
               _buildPasswordField(),
-              Row(
-                children: [
-                  Checkbox(value: _rememberMe, onChanged: (value) => setState(() => _rememberMe = value!)),
-                  Text('Remember Me'),
-                ],
-              ),
               SizedBox(height: 16),
               _loading
                   ? Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _authenticate,
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade200),
                       child: Text(_isRegistering ? 'Register' : 'Login'),
                     ),
               TextButton(
@@ -196,8 +147,12 @@ class _LoginPageState extends State<LoginPage> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
         keyboardType: keyboardType,
+        validator: (value) => value!.isEmpty ? 'This field is required' : null,
       ),
     );
   }
@@ -216,6 +171,18 @@ class _LoginPageState extends State<LoginPage> {
             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
           ),
         ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Password is required';
+          }
+          if (value.length < 8) {
+            return 'Password must be at least 8 characters long';
+          }
+          if (!RegExp(r'^(?=.*[0-9])(?=.*[^A-Za-z0-9])').hasMatch(value)) {
+            return 'Password must contain at least one digit and one special character';
+          }
+          return null;
+        },
       ),
     );
   }
