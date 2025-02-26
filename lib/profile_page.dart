@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cloudinary_public/cloudinary_public.dart';
+import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -10,6 +13,13 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ImagePicker _picker = ImagePicker();
+  final CloudinaryPublic _cloudinary = CloudinaryPublic(
+    'dzj8zymjz', // Replace with your actual Cloud Name
+    'profile_pics', // Replace with your actual Upload Preset
+    cache: true,
+  );
+// Replace with your Cloudinary credentials
 
   User? user;
   String firstName = "";
@@ -18,7 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String phone = "";
   String age = "";
   String username = "";
-  String profileImageUrl = "";
+  String profileImageUrl = "assets/defaultprofile.png"; // Default profile image
 
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
@@ -47,8 +57,9 @@ class _ProfilePageState extends State<ProfilePage> {
             phone = data["phone"] ?? "";
             age = data["age"]?.toString() ?? "";
             username = data["username"] ?? "";
-            profileImageUrl = data["profileImageUrl"] ?? "assets/default_profile.jpg";
-            
+            profileImageUrl = data["profileImageUrl"] ??
+                "assets/defaultprofile.png"; // Check this line
+
             phoneController.text = phone;
             ageController.text = age;
             usernameController.text = username;
@@ -56,6 +67,50 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       } catch (e) {
         print("Error fetching user details: $e");
+      }
+    }
+  }
+
+  // Method to upload image to Cloudinary in a user-specific folder
+  Future<void> _uploadImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      try {
+        // Uploading image to a user-specific folder (using user UID as the folder name)
+        CloudinaryResponse response = await _cloudinary.uploadFile(
+          CloudinaryFile.fromFile(image.path,
+              folder: 'profile_pics/${user!.uid}'),
+        );
+
+        setState(() {
+          profileImageUrl =
+              response.secureUrl; // Save the URL of the uploaded image
+        });
+
+        _updateProfileImageUrlInFirestore(
+            response.secureUrl); // Update Firestore with the new URL
+      } catch (e) {
+        print("Error uploading image to Cloudinary: $e");
+      }
+    }
+  }
+
+  // Method to update profile image URL in Firestore
+  Future<void> _updateProfileImageUrlInFirestore(String imageUrl) async {
+    if (user != null) {
+      try {
+        await _firestore.collection("users").doc(user!.uid).update({
+          "profileImageUrl": imageUrl,
+        });
+        print("Updated profile image URL in Firestore: $imageUrl");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Profile image updated successfully!")),
+        );
+      } catch (e) {
+        print("Error updating profile image in Firestore: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to update profile image")),
+        );
       }
     }
   }
@@ -81,19 +136,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> resetPassword() async {
-    if (user != null) {
-      try {
-        await _auth.sendPasswordResetEmail(email: user!.email!);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Password reset link sent to $email")),
-        );
-      } catch (e) {
-        print("Error sending reset password email: $e");
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,12 +144,34 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Center(
+            GestureDetector(
+              onTap: _uploadImage, // Allows user to tap and upload image
               child: CircleAvatar(
-                backgroundImage: profileImageUrl.startsWith("http")
-                    ? NetworkImage(profileImageUrl)
-                    : AssetImage(profileImageUrl) as ImageProvider,
                 radius: 50,
+                backgroundColor: Colors.transparent,
+                child: profileImageUrl.isNotEmpty
+                    ? Image.network(
+                        profileImageUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (BuildContext context, Widget child,
+                            ImageChunkEvent? loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child; // Return the image when it's fully loaded
+                          } else {
+                            return Center(
+                                child:
+                                    CircularProgressIndicator()); // Show loading indicator
+                          }
+                        },
+                        errorBuilder: (BuildContext context, Object error,
+                            StackTrace? stackTrace) {
+                          // If error, show default image or error message
+                          return Image.asset("assets/defaultprofile.png",
+                              fit: BoxFit.cover);
+                        },
+                      )
+                    : Image.asset("assets/defaultprofile.png",
+                        fit: BoxFit.cover),
               ),
             ),
             SizedBox(height: 20),
@@ -117,19 +181,17 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 15),
             ProfileInfo(title: "Email", value: email),
             SizedBox(height: 15),
-            EditableTextField(controller: phoneController, label: "Phone Number"),
+            EditableTextField(
+                controller: phoneController, label: "Phone Number"),
             SizedBox(height: 15),
             EditableTextField(controller: ageController, label: "Age"),
             SizedBox(height: 15),
-            EditableTextField(controller: usernameController, label: "Username"),
+            EditableTextField(
+                controller: usernameController, label: "Username"),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: updateProfile,
               child: Text("Update Profile"),
-            ),
-            TextButton(
-              onPressed: resetPassword,
-              child: Text("Reset Password", style: TextStyle(color: Colors.red)),
             ),
           ],
         ),
@@ -149,7 +211,8 @@ class ProfileInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(title,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         Container(
           width: double.infinity,
           padding: EdgeInsets.all(12),

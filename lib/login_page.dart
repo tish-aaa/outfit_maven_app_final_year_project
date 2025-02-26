@@ -27,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _loading = false;
   bool _obscurePassword = true;
   File? _selectedImage;
-  String _defaultProfileImagePath = 'assets/defaultprofile.jpg';
+  String _defaultProfileImagePath = 'assets/defaultprofile.png';
 
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);

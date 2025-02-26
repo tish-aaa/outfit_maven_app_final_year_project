@@ -5,6 +5,7 @@ import 'contact_page.dart';
 import 'login_page.dart';
 import 'liked_inspo_page.dart';
 import 'profile_page.dart';
+import 'outfit_quiz.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -23,7 +24,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: Center(
         child: Image.asset(
-          'assets/logo.jpg',
+          'assets/logo.png',
           height: 40,
         ),
       ),
@@ -54,7 +55,6 @@ class CustomDrawer extends StatelessWidget {
     required this.profileImageUrl,
   });
 
-  // Default profile image in case the URL is empty
   final String defaultProfileImage = 'https://example.com/default_profile_image.png';
 
   @override
@@ -117,7 +117,7 @@ class CustomDrawer extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   Icons.quiz,
-                  () => Scaffold(body: Center(child: Text("Quiz Page"))),
+                  () => OutfitQuizPage(),
                   context,
                   "Quiz"
                 ),
@@ -130,8 +130,8 @@ class CustomDrawer extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          Image.asset('assets/logo.jpg', height: 50),
+          const SizedBox(height: 10),
+          Image.asset('assets/logo.png', height: 50),
         ],
       ),
     );
@@ -140,7 +140,7 @@ class CustomDrawer extends StatelessWidget {
   Widget _buildDrawerItem(IconData icon, Widget Function() page, BuildContext context, String title) {
     return ListTile(
       leading: Icon(icon, color: Colors.blueGrey),
-      title: Text(title), // Added title for better UI
+      title: Text(title),
       onTap: () {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => page()));
@@ -237,7 +237,7 @@ class CustomBottomNavBar extends StatelessWidget {
       child: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: onTap,
-        backgroundColor: Colors.transparent, // Let the gradient be visible
+        backgroundColor: Colors.transparent,
         elevation: 0,
         items: [
           _buildNavItem(Icons.home, 0),
@@ -262,7 +262,7 @@ class CustomBottomNavBar extends StatelessWidget {
         child: Icon(icon,
             color: currentIndex == index ? Colors.blueAccent : Colors.blueGrey),
       ),
-      label: "", // No labels, only icons
+      label: "", 
     );
   }
 }
