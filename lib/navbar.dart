@@ -54,6 +54,9 @@ class CustomDrawer extends StatelessWidget {
     required this.profileImageUrl,
   });
 
+  // Default profile image in case the URL is empty
+  final String defaultProfileImage = 'https://example.com/default_profile_image.png';
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -65,7 +68,8 @@ class CustomDrawer extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircleAvatar(
-                  backgroundImage: NetworkImage(profileImageUrl),
+                  backgroundImage: NetworkImage(
+                      profileImageUrl.isNotEmpty ? profileImageUrl : defaultProfileImage),
                   radius: 40,
                 ),
                 const SizedBox(height: 10),
@@ -80,23 +84,49 @@ class CustomDrawer extends StatelessWidget {
             child: ListView(
               children: [
                 _buildDrawerItem(
-                    Icons.home,
-                    () => HomePage(
-                        userId: userId,
-                        userName: userName,
-                        profileImageUrl: profileImageUrl),
-                    context),
-                _buildDrawerItem(Icons.info, () {}, context),
+                  Icons.home, 
+                  () => HomePage(
+                    userId: userId,
+                    userName: userName,
+                    profileImageUrl: profileImageUrl,
+                  ), 
+                  context, 
+                  "Home"
+                ),
                 _buildDrawerItem(
-                    Icons.favorite,
-                    () => LikedInspoPage(
-                        userId: userId,
-                        userName: userName,
-                        profileImageUrl: profileImageUrl),
-                    context),
-                _buildDrawerItem(Icons.checkroom, () {}, context),
-                _buildDrawerItem(Icons.quiz, () {}, context),
-                _buildDrawerItem(Icons.contact_mail, () => ContactPage(), context),
+                  Icons.info, 
+                  () => Scaffold(body: Center(child: Text("Info Page"))), 
+                  context, 
+                  "Info"
+                ),
+                _buildDrawerItem(
+                  Icons.favorite,
+                  () => LikedInspoPage(
+                    userId: userId,
+                    userName: userName,
+                    profileImageUrl: profileImageUrl,
+                  ),
+                  context,
+                  "Liked Inspo"
+                ),
+                _buildDrawerItem(
+                  Icons.checkroom,
+                  () => Scaffold(body: Center(child: Text("Fashion Page"))),
+                  context,
+                  "Fashion"
+                ),
+                _buildDrawerItem(
+                  Icons.quiz,
+                  () => Scaffold(body: Center(child: Text("Quiz Page"))),
+                  context,
+                  "Quiz"
+                ),
+                _buildDrawerItem(
+                  Icons.contact_mail,
+                  () => ContactPage(),
+                  context,
+                  "Contact"
+                ),
               ],
             ),
           ),
@@ -107,9 +137,10 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, Widget Function() page, BuildContext context) {
+  Widget _buildDrawerItem(IconData icon, Widget Function() page, BuildContext context, String title) {
     return ListTile(
       leading: Icon(icon, color: Colors.blueGrey),
+      title: Text(title), // Added title for better UI
       onTap: () {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => page()));
@@ -128,6 +159,8 @@ class CustomEndDrawer extends StatelessWidget {
     required this.profileImageUrl,
   });
 
+  final String defaultProfileImage = 'https://example.com/default_profile_image.png';
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -139,7 +172,8 @@ class CustomEndDrawer extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircleAvatar(
-                  backgroundImage: NetworkImage(profileImageUrl),
+                  backgroundImage: NetworkImage(
+                      profileImageUrl.isNotEmpty ? profileImageUrl : defaultProfileImage),
                   radius: 40,
                 ),
                 const SizedBox(height: 10),

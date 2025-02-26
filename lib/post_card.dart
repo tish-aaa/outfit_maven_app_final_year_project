@@ -6,12 +6,16 @@ class PostCard extends StatefulWidget {
   final String imageUrl;
   final String caption;
   final String userId;
+  final String userName;
+  final String profileImageUrl; // Add profile image URL
 
   const PostCard({
     required this.postId,
     required this.imageUrl,
     required this.caption,
     required this.userId,
+    required this.userName,
+    required this.profileImageUrl, // Include in constructor
     super.key,
   });
 
@@ -160,6 +164,19 @@ class _PostCardState extends State<PostCard> {
       ),
       child: Column(
         children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundImage: NetworkImage(widget.profileImageUrl), // Display profile image
+            ),
+            title: Text(
+              widget.userName,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey,
+              ),
+            ),
+          ),
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
             child: Image.network(

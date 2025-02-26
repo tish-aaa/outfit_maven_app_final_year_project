@@ -57,15 +57,33 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
               if (data == null ||
                   !data.containsKey('postId') ||
                   !data.containsKey('imageUrl') ||
-                  !data.containsKey('caption')) {
+                  !data.containsKey('caption') ||
+                  !data.containsKey('userId')) {
                 return const SizedBox.shrink(); // Skip invalid data
               }
 
-              return PostCard(
-                postId: data['postId'],
-                imageUrl: data['imageUrl'],
-                caption: data['caption'],
-                userId: widget.userId, // Removed userName (not in PostCard)
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(data['userId'])
+                    .get(),
+                builder: (context, userSnapshot) {
+                  if (userSnapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox.shrink(); // Show nothing while loading
+                  }
+
+                  final userData =
+                      userSnapshot.data?.data() as Map<String, dynamic>?;
+
+                  return PostCard(
+                    postId: data['postId'],
+                    imageUrl: data['imageUrl'],
+                    caption: data['caption'],
+                    userId: data['userId'],
+                    userName: userData?['userName'] ?? 'Unknown User',
+                    profileImageUrl: userData?['profileImageUrl'] ?? 'https://example.com/default_profile_image.png', // Ensure profile image is passed
+                  );
+                },
               );
             }).toList(),
           );

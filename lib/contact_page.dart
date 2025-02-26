@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'login_page.dart';
 import 'navbar.dart';
 
 class ContactPage extends StatefulWidget {
@@ -26,19 +25,25 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
-    final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final user = FirebaseAuth.instance.currentUser;
+    final String userId = user?.uid ?? '';
+    final String userName = user?.displayName ?? 'User';
+    final String profileImageUrl = user?.photoURL ?? 'https://via.placeholder.com/150';
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(userId: userId, userName: userName),
+      drawer: CustomDrawer(
+        userId: userId,
+        userName: userName,
+        profileImageUrl: profileImageUrl,
+      ),
       endDrawer: CustomEndDrawer(
-        userName: "User's Name", // Replace with actual user data
-        profileImageUrl:
-            "URL of the profile image", // Replace with actual image URL
+        userName: userName,
+        profileImageUrl: profileImageUrl,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -52,33 +57,31 @@ class _ContactPageState extends State<ContactPage> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Card(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15)),
               elevation: 5,
               child: ListTile(
-                leading: Icon(Icons.email, color: Colors.blueAccent, size: 30),
-                title: Text("Email Us",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text("contact@outfitmaven.com"),
+                leading: const Icon(Icons.email, color: Colors.blueAccent, size: 30),
+                title: const Text("Email Us", style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text("contact@outfitmaven.com"),
                 onTap: () => _launchURL("mailto:contact@outfitmaven.com"),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Card(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15)),
               elevation: 5,
               child: ListTile(
-                leading: Icon(Icons.phone, color: Colors.green, size: 30),
-                title: Text("Call Us",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text("+123 456 7890"),
+                leading: const Icon(Icons.phone, color: Colors.green, size: 30),
+                title: const Text("Call Us", style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text("+123 456 7890"),
                 onTap: () => _launchURL("tel:+1234567890"),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Center(
               child: Text(
                 "Follow us on Social Media",
@@ -89,34 +92,30 @@ class _ContactPageState extends State<ContactPage> {
                 ),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: FaIcon(FontAwesomeIcons.facebook, color: Colors.blue),
+                  icon: const FaIcon(FontAwesomeIcons.facebook, color: Colors.blue),
                   iconSize: 40,
-                  onPressed: () =>
-                      _launchURL("https://facebook.com/outfitmaven"),
+                  onPressed: () => _launchURL("https://facebook.com/outfitmaven"),
                 ),
-                SizedBox(width: 15),
+                const SizedBox(width: 15),
                 IconButton(
-                  icon: FaIcon(FontAwesomeIcons.instagram, color: Colors.pink),
+                  icon: const FaIcon(FontAwesomeIcons.instagram, color: Colors.pink),
                   iconSize: 40,
-                  onPressed: () =>
-                      _launchURL("https://instagram.com/outfitmaven"),
+                  onPressed: () => _launchURL("https://instagram.com/outfitmaven"),
                 ),
-                SizedBox(width: 15),
+                const SizedBox(width: 15),
                 IconButton(
-                  icon:
-                      FaIcon(FontAwesomeIcons.twitter, color: Colors.lightBlue),
+                  icon: const FaIcon(FontAwesomeIcons.twitter, color: Colors.lightBlue),
                   iconSize: 40,
-                  onPressed: () =>
-                      _launchURL("https://twitter.com/outfitmaven"),
+                  onPressed: () => _launchURL("https://twitter.com/outfitmaven"),
                 ),
               ],
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             Text(
               'Feedback:',
               style: TextStyle(
@@ -124,15 +123,15 @@ class _ContactPageState extends State<ContactPage> {
                   fontWeight: FontWeight.bold,
                   color: Colors.blueAccent),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Write your suggestions...',
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Center(
               child: ElevatedButton(
                 onPressed: () {}, // Add function to send feedback
@@ -140,9 +139,9 @@ class _ContactPageState extends State<ContactPage> {
                   backgroundColor: Colors.blueAccent,
                   foregroundColor: Colors.white,
                 ),
-                child: Text('Submit Feedback'),
+                child: const Text('Submit Feedback'),
               ),
-            )
+            ),
           ],
         ),
       ),

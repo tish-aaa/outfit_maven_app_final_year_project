@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -11,30 +14,44 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
 
   bool _isRegistering = false;
   bool _loading = false;
   bool _obscurePassword = true;
+  File? _selectedImage;
+  String _defaultProfileImagePath = 'assets/defaultprofile.jpg';
 
-  @override
-  void initState() {
-    super.initState();
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
   }
 
-  Future<bool> _isUsernameTaken(String username) async {
-    final querySnapshot = await _firestore
-        .collection('users')
-        .where('username', isEqualTo: username)
-        .get();
-    return querySnapshot.docs.isNotEmpty;
+  Future<String> _uploadProfileImage(String userId) async {
+    if (_selectedImage == null) return _defaultProfileImagePath;
+
+    try {
+      Reference storageRef = _storage.ref().child('profile_pictures/$userId.jpg');
+      await storageRef.putFile(_selectedImage!);
+      return await storageRef.getDownloadURL();
+    } catch (e) {
+      print("Error uploading image: $e");
+      return _defaultProfileImagePath;
+    }
   }
 
-  void _authenticate() async {
+  Future<void> _authenticate() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
@@ -42,25 +59,22 @@ class _LoginPageState extends State<LoginPage> {
       UserCredential userCredential;
       String userId;
       String userName = "";
+      String profileImageUrl = _defaultProfileImagePath;
 
       if (_isRegistering) {
-        if (await _isUsernameTaken(_usernameController.text.trim())) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Username is already taken. Choose another one.')),
-          );
-          setState(() => _loading = false);
-          return;
-        }
-
         userCredential = await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
         userId = userCredential.user!.uid;
+        profileImageUrl = await _uploadProfileImage(userId);
 
         await _firestore.collection('users').doc(userId).set({
           'username': _usernameController.text.trim(),
+          'firstName': _firstNameController.text.trim(),
+          'lastName': _lastNameController.text.trim(),
           'email': _emailController.text.trim(),
+          'profileImageUrl': profileImageUrl,
         });
 
         userName = _usernameController.text.trim();
@@ -75,6 +89,7 @@ class _LoginPageState extends State<LoginPage> {
         if (userDoc.exists) {
           final data = userDoc.data() as Map<String, dynamic>?;
           userName = data?['username'] ?? '';
+          profileImageUrl = data?['profileImageUrl'] ?? _defaultProfileImagePath;
         }
       }
 
@@ -84,6 +99,7 @@ class _LoginPageState extends State<LoginPage> {
           builder: (context) => HomePage(
             userId: userId,
             userName: userName,
+            profileImageUrl: profileImageUrl,
           ),
         ),
       );
@@ -103,6 +119,9 @@ class _LoginPageState extends State<LoginPage> {
       _emailController.clear();
       _passwordController.clear();
       _usernameController.clear();
+      _firstNameController.clear();
+      _lastNameController.clear();
+      _selectedImage = null;
     });
   }
 
@@ -120,8 +139,11 @@ class _LoginPageState extends State<LoginPage> {
           child: ListView(
             children: [
               if (_isRegistering) _buildTextField(_usernameController, 'Username'),
+              if (_isRegistering) _buildTextField(_firstNameController, 'First Name'),
+              if (_isRegistering) _buildTextField(_lastNameController, 'Last Name'),
               _buildTextField(_emailController, 'Email', keyboardType: TextInputType.emailAddress),
               _buildPasswordField(),
+              if (_isRegistering) _buildImagePicker(),
               SizedBox(height: 16),
               _loading
                   ? Center(child: CircularProgressIndicator())
@@ -158,32 +180,20 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildPasswordField() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: _passwordController,
-        obscureText: _obscurePassword,
-        decoration: InputDecoration(
-          labelText: 'Password',
-          border: OutlineInputBorder(),
-          suffixIcon: IconButton(
-            icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-          ),
+    return _buildTextField(_passwordController, 'Password', keyboardType: TextInputType.visiblePassword);
+  }
+
+  Widget _buildImagePicker() {
+    return Column(
+      children: [
+        _selectedImage != null
+            ? Image.file(_selectedImage!, height: 100, width: 100, fit: BoxFit.cover)
+            : Image.asset(_defaultProfileImagePath, height: 100, width: 100, fit: BoxFit.cover),
+        TextButton(
+          onPressed: _pickImage,
+          child: Text('Choose Profile Picture'),
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Password is required';
-          }
-          if (value.length < 8) {
-            return 'Password must be at least 8 characters long';
-          }
-          if (!RegExp(r'^(?=.*[0-9])(?=.*[^A-Za-z0-9])').hasMatch(value)) {
-            return 'Password must contain at least one digit and one special character';
-          }
-          return null;
-        },
-      ),
+      ],
     );
   }
 }
