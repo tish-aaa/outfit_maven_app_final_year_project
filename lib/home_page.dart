@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'post_card.dart';
 import 'navbar.dart';
 
 class HomePage extends StatefulWidget {
-  final String userId;
-  final String userName;
-  final String profileImageUrl;
-
-  const HomePage({
-    super.key,
-    required this.userId,
-    required this.userName,
-    required this.profileImageUrl,
-  });
+  const HomePage({super.key});
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -22,8 +14,38 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  String userId = '';
+  String userName = 'Unknown User';
+  String profileImageUrl = '';
+
   // Default profile image
   final String defaultProfileImage = 'https://example.com/default_profile_image.png';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        userId = user.uid;
+      });
+
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
+      if (userDoc.exists) {
+        Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+        setState(() {
+          userName = userData?['userName'] ?? 'Unknown User';
+          profileImageUrl = userData?['profileImageUrl'] ?? defaultProfileImage;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,17 +53,13 @@ class _HomePageState extends State<HomePage> {
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
       drawer: CustomDrawer(
-        userId: widget.userId,
-        userName: widget.userName,
-        profileImageUrl: widget.profileImageUrl.isNotEmpty
-            ? widget.profileImageUrl
-            : defaultProfileImage, // Ensure a profile image exists
+        userId: userId,
+        userName: userName,
+        profileImageUrl: profileImageUrl.isNotEmpty ? profileImageUrl : defaultProfileImage,
       ),
       endDrawer: CustomEndDrawer(
-        userName: widget.userName,
-        profileImageUrl: widget.profileImageUrl.isNotEmpty
-            ? widget.profileImageUrl
-            : defaultProfileImage, // Ensure a profile image exists
+        userName: userName,
+        profileImageUrl: profileImageUrl.isNotEmpty ? profileImageUrl : defaultProfileImage,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('posts').snapshots(),
@@ -63,7 +81,7 @@ class _HomePageState extends State<HomePage> {
                   !data.containsKey('imageUrl') || 
                   !data.containsKey('caption') || 
                   !data.containsKey('userId')) {
-                return const SizedBox.shrink(); // Skip invalid posts
+                return const SizedBox.shrink();
               }
 
               return FutureBuilder<DocumentSnapshot>(
@@ -73,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                     .get(),
                 builder: (context, userSnapshot) {
                   String profileImage = defaultProfileImage;
-                  String userName = "Unknown User";
+                  String fetchedUserName = "Unknown User";
 
                   if (userSnapshot.connectionState == ConnectionState.done && 
                       userSnapshot.data != null &&
@@ -82,16 +100,16 @@ class _HomePageState extends State<HomePage> {
                         userSnapshot.data!.data() as Map<String, dynamic>;
 
                     profileImage = userData['profileImageUrl'] ?? defaultProfileImage;
-                    userName = userData['userName'] ?? "Unknown User";
+                    fetchedUserName = userData['userName'] ?? "Unknown User";
                   }
 
                   return PostCard(
                     postId: data['postId'],
                     imageUrl: data['imageUrl'],
                     caption: data['caption'],
-                    userId: data['userId'], // Ensure correct user ID
-                    userName: userName, // Fetch correct userName
-                    profileImageUrl: profileImage, // Fetch correct profile image
+                    userId: data['userId'],
+                    userName: fetchedUserName,
+                    profileImageUrl: profileImage,
                   );
                 },
               );

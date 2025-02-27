@@ -85,11 +85,7 @@ class CustomDrawer extends StatelessWidget {
               children: [
                 _buildDrawerItem(
                   Icons.home, 
-                  () => HomePage(
-                    userId: userId,
-                    userName: userName,
-                    profileImageUrl: profileImageUrl,
-                  ), 
+                  () => HomePage(), 
                   context, 
                   "Home"
                 ),

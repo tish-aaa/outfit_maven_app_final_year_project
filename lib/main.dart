@@ -64,11 +64,7 @@ class AuthWrapper extends StatelessWidget {
                 String userName = "${snapshot.data!['firstName']} ${snapshot.data!['lastName']}";
                 String profileImageUrl = snapshot.data!['profileImageUrl'] ?? '';
 
-                return HomePage(
-                  userId: user.uid, 
-                  userName: userName, 
-                  profileImageUrl: profileImageUrl,
-                );
+                return HomePage();
               },
             );
           }
