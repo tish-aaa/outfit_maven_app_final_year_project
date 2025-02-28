@@ -63,7 +63,7 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
             return Center(
                 child: CircularProgressIndicator(color: Colors.blue.shade100));
           }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data?.docs == null || snapshot.data!.docs.isEmpty) {
             return Center(child: Text("No outfits added yet."));
           }
 
@@ -79,29 +79,25 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                       ? ListView.builder(
                           itemCount: posts.length,
                           itemBuilder: (context, index) {
-                            var post =
-                                posts[index].data() as Map<String, dynamic>;
+                            var post = posts[index].data() as Map<String, dynamic>;
 
                             return FutureBuilder<Map<String, String>>(
-                              future: userProvider.getUserInfo(post['userId']),
+                              future: userProvider.getUserInfo(post['userId'] ?? ''),
                               builder: (context, userSnapshot) {
-                                if (userSnapshot.connectionState ==
-                                    ConnectionState.waiting) {
+                                if (userSnapshot.connectionState == ConnectionState.waiting) {
                                   return const SizedBox.shrink();
                                 }
 
-                                final userInfo = userSnapshot.data ??
-                                    {
-                                      "username": "Unknown User",
-                                      "profileImageUrl":
-                                          UserProvider.defaultProfileImage,
-                                    };
+                                final userInfo = userSnapshot.data ?? {
+                                  "username": "Unknown User",
+                                  "profileImageUrl": UserProvider.defaultProfileImage,
+                                };
 
                                 return OutfitPost(
-                                  postId: post['postId'],
-                                  imageUrl: post['imageUrl'],
-                                  description: post['description'],
-                                  userId: post['userId'],
+                                  postId: post['postId'] ?? '',
+                                  imageUrl: post['imageUrl'] ?? '',
+                                  description: post['description'] ?? '',
+                                  userId: post['userId'] ?? '',
                                   userName: userInfo["username"]!,
                                   profileImageUrl: userInfo["profileImageUrl"]!,
                                   isPrivate: post['isPrivate'] ?? false,
@@ -112,42 +108,33 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                         )
                       : GridView.builder(
                           padding: EdgeInsets.all(8.0),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: _currentLayout == 0
-                                ? 3
-                                : _currentLayout == 1
-                                    ? 2
-                                    : 1,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: _currentLayout == 0 ? 3 : _currentLayout == 1 ? 2 : 1,
                             childAspectRatio: _currentLayout == 1 ? 1 : 0.8,
                             crossAxisSpacing: 8.0,
                             mainAxisSpacing: 8.0,
                           ),
                           itemCount: posts.length,
                           itemBuilder: (context, index) {
-                            var post =
-                                posts[index].data() as Map<String, dynamic>;
+                            var post = posts[index].data() as Map<String, dynamic>;
 
                             return FutureBuilder<Map<String, String>>(
-                              future: userProvider.getUserInfo(post['userId']),
+                              future: userProvider.getUserInfo(post['userId'] ?? ''),
                               builder: (context, userSnapshot) {
-                                if (userSnapshot.connectionState ==
-                                    ConnectionState.waiting) {
+                                if (userSnapshot.connectionState == ConnectionState.waiting) {
                                   return const SizedBox.shrink();
                                 }
 
-                                final userInfo = userSnapshot.data ??
-                                    {
-                                      "username": "Unknown User",
-                                      "profileImageUrl":
-                                          UserProvider.defaultProfileImage,
-                                    };
+                                final userInfo = userSnapshot.data ?? {
+                                  "username": "Unknown User",
+                                  "profileImageUrl": UserProvider.defaultProfileImage,
+                                };
 
                                 return OutfitPost(
-                                  postId: post['postId'],
-                                  imageUrl: post['imageUrl'],
-                                  description: post['description'],
-                                  userId: post['userId'],
+                                  postId: post['postId'] ?? '',
+                                  imageUrl: post['imageUrl'] ?? '',
+                                  description: post['description'] ?? '',
+                                  userId: post['userId'] ?? '',
                                   userName: userInfo["username"]!,
                                   profileImageUrl: userInfo["profileImageUrl"]!,
                                   isPrivate: post['isPrivate'] ?? false,

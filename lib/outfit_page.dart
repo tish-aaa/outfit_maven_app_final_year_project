@@ -34,10 +34,13 @@ class _OutfitPageState extends State<OutfitPage> {
         .doc(widget.postId)
         .get();
     if (postDoc.exists) {
+      var data = postDoc.data() as Map<String, dynamic>;
+
       setState(() {
-        _descriptionController.text = postDoc['description'] ?? '';
-        _isPrivate = postDoc['isPrivate'] ?? false;
-        _imageUrl = postDoc['imageUrl'] ?? '';
+        _descriptionController.text =
+            data['description'] ?? ''; // Default to empty string
+        _isPrivate = data['isPrivate'] ?? false;
+        _imageUrl = data['imageUrl'] ?? ''; // Default to empty string
       });
     }
   }
