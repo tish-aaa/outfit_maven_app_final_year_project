@@ -16,35 +16,38 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    String profileImageUrl = userProvider.profileImageUrl;
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        String profileImageUrl = userProvider.profileImageUrl;
 
-    return AppBar(
-      backgroundColor: Colors.blue.shade100,
-      leading: IconButton(
-        icon: const Icon(Icons.menu, color: Colors.blueGrey),
-        onPressed: () {
-          scaffoldKey.currentState?.openDrawer();
-        },
-      ),
-      title: Center(
-        child: Image.asset(
-          'assets/logo.png',
-          height: 40,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: CircleAvatar(
-            backgroundImage: profileImageUrl.isNotEmpty
-                ? NetworkImage(profileImageUrl)
-                : const AssetImage('assets/defaultprofile.jpg') as ImageProvider,
+        return AppBar(
+          backgroundColor: Colors.blue.shade100,
+          leading: IconButton(
+            icon: const Icon(Icons.menu, color: Colors.blueGrey),
+            onPressed: () {
+              scaffoldKey.currentState?.openDrawer();
+            },
           ),
-          onPressed: () {
-            scaffoldKey.currentState?.openEndDrawer();
-          },
-        ),
-      ],
+          title: Center(
+            child: Image.asset(
+              'assets/logo.png',
+              height: 40,
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: CircleAvatar(
+                backgroundImage: profileImageUrl.isNotEmpty
+                    ? NetworkImage(profileImageUrl)
+                    : const AssetImage('assets/defaultprofile.png') as ImageProvider,
+              ),
+              onPressed: () {
+                scaffoldKey.currentState?.openEndDrawer();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -55,64 +58,74 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 class CustomDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-
-    return Drawer(
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            color: Colors.blue.shade200,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  backgroundImage: userProvider.profileImageUrl.isNotEmpty
-                      ? NetworkImage(userProvider.profileImageUrl)
-                      : const AssetImage('assets/defaultprofile.jpg') as ImageProvider,
-                  radius: 40,
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        return Drawer(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                color: Colors.blue.shade200,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: userProvider.profileImageUrl.isNotEmpty
+                          ? NetworkImage(userProvider.profileImageUrl)
+                          : const AssetImage('assets/defaultprofile.png') as ImageProvider,
+                      radius: 40,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      userProvider.username,
+                      style: const TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  userProvider.username,
-                  style: const TextStyle(color: Colors.white, fontSize: 20),
-                ),
-              ],
-            ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.home, color: Colors.blueGrey),
+                title: const Text('Home'),
+                onTap: () {
+                  Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (context) => HomePage()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.favorite, color: Colors.blueGrey),
+                title: const Text('Liked Inspo'),
+                onTap: () {
+                  Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (context) => LikedInspoPage()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.style, color: Colors.blueGrey),
+                title: const Text('Outfit Quiz'),
+                onTap: () {
+                  Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (context) => OutfitQuizPage()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.contact_mail, color: Colors.blueGrey),
+                title: const Text('Contact'),
+                onTap: () {
+                  Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (context) => ContactPage()));
+                },
+              ),
+              const Spacer(),
+              Image.asset(
+                'assets/logo.png',
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ],
           ),
-          ListTile(
-            leading: const Icon(Icons.home, color: Colors.blueGrey),
-            title: const Text('Home'),
-            onTap: () {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite, color: Colors.blueGrey),
-            title: const Text('Liked Inspo'),
-            onTap: () {
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => LikedInspoPage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.contact_mail, color: Colors.blueGrey),
-            title: const Text('Contact'),
-            onTap: () {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ContactPage()));
-            },
-          ),
-          const Spacer(),
-          Image.asset(
-            'assets/logo.png',
-            width: double.infinity,
-            fit: BoxFit.cover,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -120,57 +133,59 @@ class CustomDrawer extends StatelessWidget {
 class CustomEndDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-
-    return Drawer(
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            color: Colors.blue.shade200,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  backgroundImage: userProvider.profileImageUrl.isNotEmpty
-                      ? NetworkImage(userProvider.profileImageUrl)
-                      : const AssetImage('assets/defaultprofile.jpg')
-                          as ImageProvider,
-                  radius: 40,
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        return Drawer(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                color: Colors.blue.shade200,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: userProvider.profileImageUrl.isNotEmpty
+                          ? NetworkImage(userProvider.profileImageUrl)
+                          : const AssetImage('assets/defaultprofile.png') as ImageProvider,
+                      radius: 40,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      userProvider.username,
+                      style: const TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  userProvider.username,
-                  style: const TextStyle(color: Colors.white, fontSize: 20),
-                ),
-              ],
-            ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.person, color: Colors.blueGrey),
+                title: const Text('My Profile'),
+                onTap: () {
+                  Navigator.push(
+                      context, MaterialPageRoute(builder: (context) => ProfilePage()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.blueGrey),
+                title: const Text('Logout'),
+                onTap: () {
+                  FirebaseAuth.instance.signOut();
+                  Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (context) => LoginPage()));
+                },
+              ),
+              const Spacer(),
+              Image.asset(
+                'assets/logo.png',
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ],
           ),
-          ListTile(
-            leading: const Icon(Icons.person, color: Colors.blueGrey),
-            title: const Text('My Profile'),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.blueGrey),
-            title: const Text('Logout'),
-            onTap: () {
-              FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (context) => LoginPage()));
-            },
-          ),
-          const Spacer(),
-          Image.asset(
-            'assets/logo.png',
-            width: double.infinity,
-            fit: BoxFit.cover,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

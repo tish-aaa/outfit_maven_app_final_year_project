@@ -67,11 +67,15 @@ class _LoginPageState extends State<LoginPage> {
           'firstName': _firstNameController.text.trim(),
           'lastName': _lastNameController.text.trim(),
           'email': _emailController.text.trim(),
-          'profileImageUrl': UserProvider.defaultProfileImage, // Use default profile image
+          'profileImageUrl': 'assets/defaultprofile.jpg', // ✅ FIXED: Using direct string instead of UserProvider.defaultProfileImage
         });
 
-        // Set user data in provider
-        userProvider.setUser(userId, _usernameController.text.trim(), UserProvider.defaultProfileImage);
+        // ✅ FIXED: Using `updateUser` instead of `setUser`
+        userProvider.updateUser(
+          id: userId,
+          name: _usernameController.text.trim(),
+          imageUrl: 'assets/defaultprofile.jpg',
+        );
       } else {
         userCredential = await _auth.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
@@ -83,10 +87,10 @@ class _LoginPageState extends State<LoginPage> {
         DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
         if (userDoc.exists) {
           Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-          userProvider.setUser(
-            userId,
-            userData['username'] ?? 'Unknown User',
-            userData['profileImageUrl'] ?? UserProvider.defaultProfileImage,
+          userProvider.updateUser(
+            id: userId,
+            name: userData['username'] ?? 'Unknown User',
+            imageUrl: userData['profileImageUrl'] ?? 'assets/defaultprofile.jpg',
           );
         }
       }

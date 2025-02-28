@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:provider/provider.dart';
+import 'providers/user_provider.dart';
 import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
@@ -27,7 +29,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String phone = "";
   String age = "";
   String username = "";
-  String profileImageUrl = "assets/defaultprofile.png"; // Default profile image
 
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
@@ -56,7 +57,6 @@ class _ProfilePageState extends State<ProfilePage> {
             phone = data["phone"] ?? "";
             age = data["age"]?.toString() ?? "";
             username = data["username"] ?? "";
-            profileImageUrl = data["profileImageUrl"] ?? "assets/defaultprofile.png";
 
             phoneController.text = phone;
             ageController.text = age;
@@ -69,29 +69,22 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Upload profile picture to Cloudinary and update Firestore
   Future<void> _uploadImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       try {
-        // Generate a unique filename for the profile picture
-        String uniqueFileName = "profile_${user!.uid}_${DateTime.now().millisecondsSinceEpoch}";
+        String uniqueFileName =
+            "profile_${user!.uid}_${DateTime.now().millisecondsSinceEpoch}";
 
-        // Upload the image to Cloudinary
         CloudinaryResponse response = await _cloudinary.uploadFile(
-          CloudinaryFile.fromFile(image.path, resourceType: CloudinaryResourceType.Image, publicId: uniqueFileName),
+          CloudinaryFile.fromFile(image.path,
+              resourceType: CloudinaryResourceType.Image,
+              publicId: uniqueFileName),
         );
 
-        // Update Firestore with the new profile image URL
         await _updateProfileImageUrlInFirestore(response.secureUrl);
 
-        setState(() {
-          profileImageUrl = response.secureUrl;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Profile image updated successfully!")),
-        );
+        Provider.of<UserProvider>(context, listen: false).updateProfileImage(response.secureUrl);
       } catch (e) {
         print("Error uploading image to Cloudinary: $e");
         ScaffoldMessenger.of(context).showSnackBar(
@@ -101,7 +94,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Update Firestore with the new profile image URL
   Future<void> _updateProfileImageUrlInFirestore(String imageUrl) async {
     if (user != null) {
       try {
@@ -137,6 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
       appBar: AppBar(title: Text("My Profile")),
       body: SingleChildScrollView(
@@ -144,12 +137,12 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           children: [
             GestureDetector(
-              onTap: _uploadImage, // Allows user to tap and upload image
+              onTap: _uploadImage,
               child: CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.transparent,
-                backgroundImage: profileImageUrl.startsWith("http")
-                    ? NetworkImage(profileImageUrl)
+                backgroundImage: userProvider.profileImageUrl.isNotEmpty
+                    ? NetworkImage(userProvider.profileImageUrl)
                     : AssetImage("assets/defaultprofile.png") as ImageProvider,
               ),
             ),
@@ -158,7 +151,16 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 15),
             ProfileInfo(title: "Last Name", value: lastName),
             SizedBox(height: 15),
-            ProfileInfo(title: "Email", value: email),
+            TextField(
+              controller: TextEditingController(text: email),
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: "Email",
+                filled: true,
+                fillColor: Colors.grey[300],
+                border: OutlineInputBorder(),
+              ),
+            ),
             SizedBox(height: 15),
             EditableTextField(controller: phoneController, label: "Phone Number"),
             SizedBox(height: 15),
@@ -188,7 +190,8 @@ class ProfileInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(title,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         Container(
           width: double.infinity,
           padding: EdgeInsets.all(12),

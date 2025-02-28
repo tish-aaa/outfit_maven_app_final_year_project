@@ -14,7 +14,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()..fetchUserData()), // ✅ Fetch user data on startup
       ],
       child: const MainApp(),
     ),
@@ -42,12 +42,14 @@ class MainApp extends StatelessWidget {
           ),
         ),
       ),
-      home: AuthWrapper(), // Handles navigation based on authentication
+      home: const AuthWrapper(),
     );
   }
 }
 
 class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -60,15 +62,10 @@ class AuthWrapper extends StatelessWidget {
             return LoginPage();
           } else {
             return FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(user.uid)
-                  .get(),
+              future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  );
+                  return const Scaffold(body: Center(child: CircularProgressIndicator()));
                 }
                 if (!snapshot.hasData || !snapshot.data!.exists) {
                   return LoginPage();
@@ -77,11 +74,10 @@ class AuthWrapper extends StatelessWidget {
                 final userData = snapshot.data!.data() as Map<String, dynamic>;
 
                 final userProvider = Provider.of<UserProvider>(context, listen: false);
-                userProvider.setUser(
-                  user.uid,
-                  userData['userName'] ?? 'Unknown User',
-                  userData['profileImageUrl'] ??
-                      UserProvider.defaultProfileImage,
+                userProvider.updateUser(
+                  id: user.uid,
+                  name: userData['username'] ?? 'Unknown User',
+                  imageUrl: userData['profileImageUrl'] ?? '',
                 );
 
                 return HomePage();
@@ -89,9 +85,7 @@ class AuthWrapper extends StatelessWidget {
             );
           }
         }
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
     );
   }
