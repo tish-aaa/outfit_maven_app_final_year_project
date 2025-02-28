@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
-import 'post_card.dart';
+import 'selectable_post.dart';
 import 'outfit_page.dart';
+import 'home_page.dart';
 
 class MyOutfitsPage extends StatefulWidget {
   @override
@@ -11,17 +12,81 @@ class MyOutfitsPage extends StatefulWidget {
 }
 
 class _MyOutfitsPageState extends State<MyOutfitsPage> {
-  int _currentLayout = 2;
-
+  int _currentLayout = 1;
   final List<IconData> _layoutIcons = [
     Icons.grid_on,
     Icons.grid_view,
     Icons.view_comfy,
-    Icons.list,
+    Icons.list
   ];
+  Set<String> _selectedPosts = {};
+  bool _isSelecting = false;
 
   Future<void> _refreshPosts() async {
     setState(() {});
+  }
+
+  void _toggleSelect(String postId) {
+    setState(() {
+      if (_selectedPosts.contains(postId)) {
+        _selectedPosts.remove(postId);
+      } else {
+        _selectedPosts.add(postId);
+      }
+      _isSelecting = _selectedPosts.isNotEmpty;
+    });
+  }
+
+  void _editSelectedOutfit() {
+    if (_selectedPosts.length == 1) {
+      String postId = _selectedPosts.first;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => OutfitPage(postId: postId)),
+      ).then((_) => setState(() => _selectedPosts.clear()));
+    }
+  }
+
+  void _confirmDelete() {
+    if (_selectedPosts.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Delete Outfits"),
+        content: Text(
+            "Are you sure you want to delete ${_selectedPosts.length} selected outfits? This action cannot be undone."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => HomePage()));
+              }
+            },
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              for (String postId in _selectedPosts) {
+                await FirebaseFirestore.instance
+                    .collection('outfits')
+                    .doc(postId)
+                    .delete();
+              }
+              setState(() {
+                _selectedPosts.clear();
+                _isSelecting = false;
+              });
+              Navigator.pop(context);
+            },
+            child: Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _openAddOutfitDialog() {
@@ -34,7 +99,6 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text('My Outfits'),
@@ -63,8 +127,8 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
             return Center(
                 child: CircularProgressIndicator(color: Colors.blue.shade100));
           }
-          if (!snapshot.hasData || snapshot.data?.docs == null || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No outfits added yet."));
+          if (!snapshot.hasData || snapshot.data?.docs.isEmpty == true) {
+            return Center(child: Text("No outfits available."));
           }
 
           var posts = snapshot.data!.docs;
@@ -79,99 +143,89 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                       ? ListView.builder(
                           itemCount: posts.length,
                           itemBuilder: (context, index) {
-                            var post = posts[index].data() as Map<String, dynamic>;
-
-                            return FutureBuilder<Map<String, String>>(
-                              future: userProvider.getUserInfo(post['userId'] ?? ''),
-                              builder: (context, userSnapshot) {
-                                if (userSnapshot.connectionState == ConnectionState.waiting) {
-                                  return const SizedBox.shrink();
-                                }
-
-                                final userInfo = userSnapshot.data ?? {
-                                  "username": "Unknown User",
-                                  "profileImageUrl": UserProvider.defaultProfileImage,
-                                };
-
-                                return OutfitPost(
-                                  postId: post['postId'] ?? '',
-                                  imageUrl: post['imageUrl'] ?? '',
-                                  description: post['description'] ?? '',
-                                  userId: post['userId'] ?? '',
-                                  userName: userInfo["username"]!,
-                                  profileImageUrl: userInfo["profileImageUrl"]!,
-                                  isPrivate: post['isPrivate'] ?? false,
-                                );
-                              },
+                            var post =
+                                posts[index].data() as Map<String, dynamic>? ??
+                                    {};
+                            return SelectablePost(
+                              postId: post['postId'] ?? '',
+                              imageUrl: post['imageUrl'] ?? '',
+                              description:
+                                  post['description'] ?? 'No description',
+                              userId: post['userId'] ?? '',
+                              userName: userProvider.username,
+                              profileImageUrl: userProvider.profileImageUrl,
+                              isPrivate: post['isPrivate'] ?? false,
+                              isSelected:
+                                  _selectedPosts.contains(post['postId']),
+                              onSelect: _toggleSelect,
                             );
                           },
                         )
                       : GridView.builder(
-                          padding: EdgeInsets.all(8.0),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: _currentLayout == 0 ? 3 : _currentLayout == 1 ? 2 : 1,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: _currentLayout == 0
+                                ? 3
+                                : _currentLayout == 1
+                                    ? 2
+                                    : 1,
                             childAspectRatio: _currentLayout == 1 ? 1 : 0.8,
-                            crossAxisSpacing: 8.0,
-                            mainAxisSpacing: 8.0,
                           ),
                           itemCount: posts.length,
                           itemBuilder: (context, index) {
-                            var post = posts[index].data() as Map<String, dynamic>;
-
-                            return FutureBuilder<Map<String, String>>(
-                              future: userProvider.getUserInfo(post['userId'] ?? ''),
-                              builder: (context, userSnapshot) {
-                                if (userSnapshot.connectionState == ConnectionState.waiting) {
-                                  return const SizedBox.shrink();
-                                }
-
-                                final userInfo = userSnapshot.data ?? {
-                                  "username": "Unknown User",
-                                  "profileImageUrl": UserProvider.defaultProfileImage,
-                                };
-
-                                return OutfitPost(
-                                  postId: post['postId'] ?? '',
-                                  imageUrl: post['imageUrl'] ?? '',
-                                  description: post['description'] ?? '',
-                                  userId: post['userId'] ?? '',
-                                  userName: userInfo["username"]!,
-                                  profileImageUrl: userInfo["profileImageUrl"]!,
-                                  isPrivate: post['isPrivate'] ?? false,
-                                );
-                              },
+                            var post =
+                                posts[index].data() as Map<String, dynamic>? ??
+                                    {};
+                            return SelectablePost(
+                              postId: post['postId'] ?? '',
+                              imageUrl: post['imageUrl'] ?? '',
+                              description:
+                                  post['description'] ?? 'No description',
+                              userId: post['userId'] ?? '',
+                              userName: userProvider.username,
+                              profileImageUrl: userProvider.profileImageUrl,
+                              isPrivate: post['isPrivate'] ?? false,
+                              isSelected:
+                                  _selectedPosts.contains(post['postId']),
+                              onSelect: _toggleSelect,
                             );
                           },
                         ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.add, size: 30),
-                        onPressed: _openAddOutfitDialog,
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.edit, size: 30),
-                        onPressed: () {
-                          // Edit functionality
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, size: 30),
-                        onPressed: () {
-                          // Delete functionality with confirmation
-                        },
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ),
           );
         },
+      ),
+      
+      /// FIXED BOTTOM ICONS
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
+        shape: CircularNotchedRectangle(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              IconButton(
+                icon: Icon(Icons.add, size: 30),
+                onPressed: _openAddOutfitDialog,
+              ),
+              IconButton(
+                icon: Icon(Icons.edit, size: 30),
+                onPressed: _selectedPosts.length == 1
+                    ? _editSelectedOutfit
+                    : null,
+              ),
+              IconButton(
+                icon: Icon(Icons.delete,
+                    size: 30,
+                    color: _selectedPosts.isNotEmpty ? Colors.red : null),
+                onPressed: _selectedPosts.isNotEmpty ? _confirmDelete : null,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

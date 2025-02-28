@@ -20,7 +20,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         String profileImageUrl = userProvider.profileImageUrl;
-
+        
         return AppBar(
           backgroundColor: Colors.blue.shade100,
           leading: IconButton(
@@ -39,9 +39,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             IconButton(
               icon: CircleAvatar(
                 radius: 24,
-                backgroundImage: profileImageUrl.isNotEmpty
+                backgroundImage: profileImageUrl != UserProvider.defaultProfileImage
                     ? NetworkImage(profileImageUrl)
-                    : const AssetImage('assets/defaultprofile.png') as ImageProvider,
+                    : AssetImage(UserProvider.defaultProfileImage) as ImageProvider,
               ),
               onPressed: () {
                 scaffoldKey.currentState?.openEndDrawer();
@@ -74,9 +74,9 @@ class CustomDrawer extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: userProvider.profileImageUrl.isNotEmpty
+                      backgroundImage: userProvider.profileImageUrl != UserProvider.defaultProfileImage
                           ? NetworkImage(userProvider.profileImageUrl)
-                          : const AssetImage('assets/defaultprofile.png') as ImageProvider,
+                          : AssetImage(UserProvider.defaultProfileImage) as ImageProvider,
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -157,9 +157,9 @@ class CustomEndDrawer extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: userProvider.profileImageUrl.isNotEmpty
+                      backgroundImage: userProvider.profileImageUrl != UserProvider.defaultProfileImage
                           ? NetworkImage(userProvider.profileImageUrl)
-                          : const AssetImage('assets/defaultprofile.png') as ImageProvider,
+                          : AssetImage(UserProvider.defaultProfileImage) as ImageProvider,
                     ),
                     const SizedBox(height: 10),
                     Text(
