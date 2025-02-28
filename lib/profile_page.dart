@@ -15,11 +15,10 @@ class _ProfilePageState extends State<ProfilePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ImagePicker _picker = ImagePicker();
   final CloudinaryPublic _cloudinary = CloudinaryPublic(
-    'dzj8zymjz', // Replace with your actual Cloud Name
-    'profile_pics', // Replace with your actual Upload Preset
+    'dzj8zymjz', // Replace with your Cloudinary cloud name
+    'profile_pics', // Replace with your upload preset
     cache: true,
   );
-// Replace with your Cloudinary credentials
 
   User? user;
   String firstName = "";
@@ -57,8 +56,7 @@ class _ProfilePageState extends State<ProfilePage> {
             phone = data["phone"] ?? "";
             age = data["age"]?.toString() ?? "";
             username = data["username"] ?? "";
-            profileImageUrl = data["profileImageUrl"] ??
-                "assets/defaultprofile.png"; // Check this line
+            profileImageUrl = data["profileImageUrl"] ?? "assets/defaultprofile.png";
 
             phoneController.text = phone;
             ageController.text = age;
@@ -71,46 +69,47 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Method to upload image to Cloudinary in a user-specific folder
+  // Upload profile picture to Cloudinary and update Firestore
   Future<void> _uploadImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       try {
-        // Uploading image to a user-specific folder (using user UID as the folder name)
+        // Generate a unique filename for the profile picture
+        String uniqueFileName = "profile_${user!.uid}_${DateTime.now().millisecondsSinceEpoch}";
+
+        // Upload the image to Cloudinary
         CloudinaryResponse response = await _cloudinary.uploadFile(
-          CloudinaryFile.fromFile(image.path,
-              folder: 'profile_pics/${user!.uid}'),
+          CloudinaryFile.fromFile(image.path, resourceType: CloudinaryResourceType.Image, publicId: uniqueFileName),
         );
 
+        // Update Firestore with the new profile image URL
+        await _updateProfileImageUrlInFirestore(response.secureUrl);
+
         setState(() {
-          profileImageUrl =
-              response.secureUrl; // Save the URL of the uploaded image
+          profileImageUrl = response.secureUrl;
         });
 
-        _updateProfileImageUrlInFirestore(
-            response.secureUrl); // Update Firestore with the new URL
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Profile image updated successfully!")),
+        );
       } catch (e) {
         print("Error uploading image to Cloudinary: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to upload profile image")),
+        );
       }
     }
   }
 
-  // Method to update profile image URL in Firestore
+  // Update Firestore with the new profile image URL
   Future<void> _updateProfileImageUrlInFirestore(String imageUrl) async {
     if (user != null) {
       try {
         await _firestore.collection("users").doc(user!.uid).update({
           "profileImageUrl": imageUrl,
         });
-        print("Updated profile image URL in Firestore: $imageUrl");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Profile image updated successfully!")),
-        );
       } catch (e) {
         print("Error updating profile image in Firestore: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to update profile image")),
-        );
       }
     }
   }
@@ -149,29 +148,9 @@ class _ProfilePageState extends State<ProfilePage> {
               child: CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.transparent,
-                child: profileImageUrl.isNotEmpty
-                    ? Image.network(
-                        profileImageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (BuildContext context, Widget child,
-                            ImageChunkEvent? loadingProgress) {
-                          if (loadingProgress == null) {
-                            return child; // Return the image when it's fully loaded
-                          } else {
-                            return Center(
-                                child:
-                                    CircularProgressIndicator()); // Show loading indicator
-                          }
-                        },
-                        errorBuilder: (BuildContext context, Object error,
-                            StackTrace? stackTrace) {
-                          // If error, show default image or error message
-                          return Image.asset("assets/defaultprofile.png",
-                              fit: BoxFit.cover);
-                        },
-                      )
-                    : Image.asset("assets/defaultprofile.png",
-                        fit: BoxFit.cover),
+                backgroundImage: profileImageUrl.startsWith("http")
+                    ? NetworkImage(profileImageUrl)
+                    : AssetImage("assets/defaultprofile.png") as ImageProvider,
               ),
             ),
             SizedBox(height: 20),
@@ -181,13 +160,11 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 15),
             ProfileInfo(title: "Email", value: email),
             SizedBox(height: 15),
-            EditableTextField(
-                controller: phoneController, label: "Phone Number"),
+            EditableTextField(controller: phoneController, label: "Phone Number"),
             SizedBox(height: 15),
             EditableTextField(controller: ageController, label: "Age"),
             SizedBox(height: 15),
-            EditableTextField(
-                controller: usernameController, label: "Username"),
+            EditableTextField(controller: usernameController, label: "Username"),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: updateProfile,
@@ -211,8 +188,7 @@ class ProfileInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         Container(
           width: double.infinity,
           padding: EdgeInsets.all(12),

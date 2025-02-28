@@ -1,9 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,7 +13,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _emailController = TextEditingController();
@@ -26,78 +24,70 @@ class _LoginPageState extends State<LoginPage> {
   bool _isRegistering = false;
   bool _loading = false;
   bool _obscurePassword = true;
-  File? _selectedImage;
-  String _defaultProfileImagePath = 'assets/defaultprofile.png';
+  bool _rememberMe = false;
 
-  Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberMe();
   }
 
-  Future<String> _uploadProfileImage(String userId) async {
-    if (_selectedImage == null) return _defaultProfileImagePath;
-
-    try {
-      Reference storageRef = _storage.ref().child('profile_pictures/$userId.jpg');
-      await storageRef.putFile(_selectedImage!);
-      return await storageRef.getDownloadURL();
-    } catch (e) {
-      print("Error uploading image: $e");
-      return _defaultProfileImagePath;
+  Future<void> _loadRememberMe() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? remember = prefs.getBool('rememberMe');
+    if (remember != null && remember) {
+      setState(() {
+        _rememberMe = true;
+        _emailController.text = prefs.getString('email') ?? '';
+        _passwordController.text = prefs.getString('password') ?? '';
+      });
     }
   }
 
   Future<void> _authenticate() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-
+    
     try {
       UserCredential userCredential;
       String userId;
-      String userName = "";
-      String profileImageUrl = _defaultProfileImagePath;
-
+      
       if (_isRegistering) {
         userCredential = await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
         userId = userCredential.user!.uid;
-        profileImageUrl = await _uploadProfileImage(userId);
 
         await _firestore.collection('users').doc(userId).set({
           'username': _usernameController.text.trim(),
           'firstName': _firstNameController.text.trim(),
           'lastName': _lastNameController.text.trim(),
           'email': _emailController.text.trim(),
-          'profileImageUrl': profileImageUrl,
+          'profileImageUrl': 'assets/defaultprofile.png', // Set default profile image
         });
-
-        userName = _usernameController.text.trim();
       } else {
         userCredential = await _auth.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
-        userId = userCredential.user!.uid;
-
-        DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-        if (userDoc.exists) {
-          final data = userDoc.data() as Map<String, dynamic>?;
-          userName = data?['username'] ?? '';
-          profileImageUrl = data?['profileImageUrl'] ?? _defaultProfileImagePath;
-        }
       }
 
+      if (!_isRegistering && _rememberMe) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('rememberMe', true);
+        await prefs.setString('email', _emailController.text);
+        await prefs.setString('password', _passwordController.text);
+      } else {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.remove('rememberMe');
+        await prefs.remove('email');
+        await prefs.remove('password');
+      }
+      
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => HomePage(),
-        ),
+        MaterialPageRoute(builder: (context) => HomePage()),
       );
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -108,88 +98,123 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _toggleRegister() {
-    setState(() {
-      _isRegistering = !_isRegistering;
-      _formKey.currentState?.reset();
-      _emailController.clear();
-      _passwordController.clear();
-      _usernameController.clear();
-      _firstNameController.clear();
-      _lastNameController.clear();
-      _selectedImage = null;
-    });
+  Future<void> _recoverPassword() async {
+    if (_emailController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter your email to recover password")),
+      );
+      return;
+    }
+
+    try {
+      await _auth.sendPasswordResetEmail(email: _emailController.text.trim());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Password reset email sent! Check your inbox.")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error sending password reset email")),
+      );
+    }
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, {bool isPassword = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        obscureText: isPassword ? _obscurePassword : false,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                )
+              : null,
+        ),
+        validator: (value) {
+          if (value!.isEmpty) return 'This field is required';
+          if (isPassword && !RegExp(r'^(?=.*\d).{6,}$').hasMatch(value)) {
+            return 'Password must have at least 6 characters & 1 digit';
+          }
+          return null;
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isRegistering ? 'Register' : 'Login'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              if (_isRegistering) _buildTextField(_usernameController, 'Username'),
-              if (_isRegistering) _buildTextField(_firstNameController, 'First Name'),
-              if (_isRegistering) _buildTextField(_lastNameController, 'Last Name'),
-              _buildTextField(_emailController, 'Email', keyboardType: TextInputType.emailAddress),
-              _buildPasswordField(),
-              if (_isRegistering) _buildImagePicker(),
-              SizedBox(height: 16),
-              _loading
-                  ? Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade100, Colors.blue.shade400],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Lottie.asset('assets/login_animation.json', height: 120),
+                    SizedBox(height: 16),
+                    if (_isRegistering) _buildTextField(_usernameController, 'Username'),
+                    if (_isRegistering) _buildTextField(_firstNameController, 'First Name'),
+                    if (_isRegistering) _buildTextField(_lastNameController, 'Last Name'),
+                    _buildTextField(_emailController, 'Email'),
+                    _buildTextField(_passwordController, 'Password', isPassword: true),
+                    
+                    if (!_isRegistering)
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            onChanged: (value) {
+                              setState(() {
+                                _rememberMe = value!;
+                              });
+                            },
+                          ),
+                          Text("Remember Me"),
+                        ],
+                      ),
+                    
+                    if (!_isRegistering)
+                      TextButton(
+                        onPressed: _recoverPassword,
+                        child: Text("Forgot Password?", style: TextStyle(color: Colors.white70)),
+                      ),
+                    
+                    SizedBox(height: 16),
+                    _loading ? CircularProgressIndicator() : ElevatedButton(
                       onPressed: _authenticate,
                       child: Text(_isRegistering ? 'Register' : 'Login'),
                     ),
-              TextButton(
-                onPressed: _toggleRegister,
-                child: Text(
-                  _isRegistering ? 'Already have an account? Login' : 'Don’t have an account? Register',
+                    
+                    TextButton(
+                      onPressed: () => setState(() => _isRegistering = !_isRegistering),
+                      child: Text(_isRegistering ? 'Already have an account? Login' : 'Don’t have an account? Register'),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String label, {TextInputType keyboardType = TextInputType.text}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-        ),
-        keyboardType: keyboardType,
-        validator: (value) => value!.isEmpty ? 'This field is required' : null,
-      ),
-    );
-  }
-
-  Widget _buildPasswordField() {
-    return _buildTextField(_passwordController, 'Password', keyboardType: TextInputType.visiblePassword);
-  }
-
-  Widget _buildImagePicker() {
-    return Column(
-      children: [
-        _selectedImage != null
-            ? Image.file(_selectedImage!, height: 100, width: 100, fit: BoxFit.cover)
-            : Image.asset(_defaultProfileImagePath, height: 100, width: 100, fit: BoxFit.cover),
-        TextButton(
-          onPressed: _pickImage,
-          child: Text('Choose Profile Picture'),
-        ),
-      ],
     );
   }
 }
