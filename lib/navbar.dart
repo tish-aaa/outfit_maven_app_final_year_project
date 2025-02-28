@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'providers/user_provider.dart';
 import 'home_page.dart';
 import 'contact_page.dart';
 import 'login_page.dart';
@@ -14,6 +16,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    String profileImageUrl = userProvider.profileImageUrl;
+
     return AppBar(
       backgroundColor: Colors.blue.shade100,
       leading: IconButton(
@@ -30,7 +35,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.account_circle, color: Colors.blueGrey),
+          icon: CircleAvatar(
+            backgroundImage: profileImageUrl.isNotEmpty
+                ? NetworkImage(profileImageUrl)
+                : const AssetImage('assets/defaultprofile.jpg') as ImageProvider,
+          ),
           onPressed: () {
             scaffoldKey.currentState?.openEndDrawer();
           },
@@ -44,137 +53,95 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class CustomDrawer extends StatelessWidget {
-  final String userId;
-  final String userName;
-  final String profileImageUrl;
-
-  const CustomDrawer({
-    super.key,
-    required this.userId,
-    required this.userName,
-    required this.profileImageUrl,
-  });
-
-  final String defaultProfileImage = 'https://example.com/default_profile_image.png';
-
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
     return Drawer(
       child: Column(
         children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: Colors.blue.shade200),
+          Container(
+            width: double.infinity,
+            color: Colors.blue.shade200,
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircleAvatar(
-                  backgroundImage: NetworkImage(
-                      profileImageUrl.isNotEmpty ? profileImageUrl : defaultProfileImage),
+                  backgroundImage: userProvider.profileImageUrl.isNotEmpty
+                      ? NetworkImage(userProvider.profileImageUrl)
+                      : const AssetImage('assets/defaultprofile.jpg') as ImageProvider,
                   radius: 40,
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  userName,
+                  userProvider.username,
                   style: const TextStyle(color: Colors.white, fontSize: 20),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: ListView(
-              children: [
-                _buildDrawerItem(
-                  Icons.home, 
-                  () => HomePage(), 
-                  context, 
-                  "Home"
-                ),
-                _buildDrawerItem(
-                  Icons.info, 
-                  () => Scaffold(body: Center(child: Text("Info Page"))), 
-                  context, 
-                  "Info"
-                ),
-                _buildDrawerItem(
-                  Icons.favorite,
-                  () => LikedInspoPage(
-                    userId: userId,
-                    userName: userName,
-                    profileImageUrl: profileImageUrl,
-                  ),
-                  context,
-                  "Liked Inspo"
-                ),
-                _buildDrawerItem(
-                  Icons.checkroom,
-                  () => Scaffold(body: Center(child: Text("Fashion Page"))),
-                  context,
-                  "Fashion"
-                ),
-                _buildDrawerItem(
-                  Icons.quiz,
-                  () => OutfitQuizPage(),
-                  context,
-                  "Quiz"
-                ),
-                _buildDrawerItem(
-                  Icons.contact_mail,
-                  () => ContactPage(),
-                  context,
-                  "Contact"
-                ),
-              ],
-            ),
+          ListTile(
+            leading: const Icon(Icons.home, color: Colors.blueGrey),
+            title: const Text('Home'),
+            onTap: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+            },
           ),
-          const SizedBox(height: 10),
-          Image.asset('assets/logo.png', height: 50),
+          ListTile(
+            leading: const Icon(Icons.favorite, color: Colors.blueGrey),
+            title: const Text('Liked Inspo'),
+            onTap: () {
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => LikedInspoPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.contact_mail, color: Colors.blueGrey),
+            title: const Text('Contact'),
+            onTap: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ContactPage()));
+            },
+          ),
+          const Spacer(),
+          Image.asset(
+            'assets/logo.png',
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDrawerItem(IconData icon, Widget Function() page, BuildContext context, String title) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.blueGrey),
-      title: Text(title),
-      onTap: () {
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => page()));
-      },
     );
   }
 }
 
 class CustomEndDrawer extends StatelessWidget {
-  final String userName;
-  final String profileImageUrl;
-
-  const CustomEndDrawer({
-    super.key,
-    required this.userName,
-    required this.profileImageUrl,
-  });
-
-  final String defaultProfileImage = 'https://example.com/default_profile_image.png';
-
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
     return Drawer(
       child: Column(
         children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: Colors.blue.shade200),
+          Container(
+            width: double.infinity,
+            color: Colors.blue.shade200,
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircleAvatar(
-                  backgroundImage: NetworkImage(
-                      profileImageUrl.isNotEmpty ? profileImageUrl : defaultProfileImage),
+                  backgroundImage: userProvider.profileImageUrl.isNotEmpty
+                      ? NetworkImage(userProvider.profileImageUrl)
+                      : const AssetImage('assets/defaultprofile.jpg')
+                          as ImageProvider,
                   radius: 40,
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  userName,
+                  userProvider.username,
                   style: const TextStyle(color: Colors.white, fontSize: 20),
                 ),
               ],
@@ -184,8 +151,7 @@ class CustomEndDrawer extends StatelessWidget {
             leading: const Icon(Icons.person, color: Colors.blueGrey),
             title: const Text('My Profile'),
             onTap: () {
-              Navigator.push(
-                  context, MaterialPageRoute(builder: (context) => ProfilePage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
             },
           ),
           ListTile(
@@ -197,68 +163,14 @@ class CustomEndDrawer extends StatelessWidget {
                   context, MaterialPageRoute(builder: (context) => LoginPage()));
             },
           ),
+          const Spacer(),
+          Image.asset(
+            'assets/logo.png',
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
         ],
       ),
-    );
-  }
-}
-
-class CustomBottomNavBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
-
-  const CustomBottomNavBar({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF8EC5FC),
-            Color(0xFFE0C3FC)
-          ], // Blue to Light Lavender Gradient
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: onTap,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        items: [
-          _buildNavItem(Icons.home, 0),
-          _buildNavItem(Icons.checkroom, 1),
-          _buildNavItem(Icons.favorite, 2),
-        ],
-      ),
-    );
-  }
-
-  BottomNavigationBarItem _buildNavItem(IconData icon, int index) {
-    return BottomNavigationBarItem(
-      icon: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: currentIndex == index
-              ? Colors.blue.shade100.withOpacity(0.6)
-              : Colors.transparent,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon,
-            color: currentIndex == index ? Colors.blueAccent : Colors.blueGrey),
-      ),
-      label: "", 
     );
   }
 }

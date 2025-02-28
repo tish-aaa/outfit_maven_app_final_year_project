@@ -2,13 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'login_page.dart'; // Import Login Page
-import 'home_page.dart'; // Import Home Page
+import 'package:provider/provider.dart';
+import 'providers/user_provider.dart';
+import 'login_page.dart';
+import 'home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MainApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: const MainApp(),
+    ),
+  );
 }
 
 class MainApp extends StatelessWidget {
@@ -32,7 +42,7 @@ class MainApp extends StatelessWidget {
           ),
         ),
       ),
-      home: AuthWrapper(), // Decide where to go based on auth state
+      home: AuthWrapper(), // Handles navigation based on authentication
     );
   }
 }
@@ -50,7 +60,10 @@ class AuthWrapper extends StatelessWidget {
             return LoginPage();
           } else {
             return FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
@@ -61,8 +74,15 @@ class AuthWrapper extends StatelessWidget {
                   return LoginPage();
                 }
 
-                String userName = "${snapshot.data!['firstName']} ${snapshot.data!['lastName']}";
-                String profileImageUrl = snapshot.data!['profileImageUrl'] ?? '';
+                final userData = snapshot.data!.data() as Map<String, dynamic>;
+
+                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                userProvider.setUser(
+                  user.uid,
+                  userData['userName'] ?? 'Unknown User',
+                  userData['profileImageUrl'] ??
+                      UserProvider.defaultProfileImage,
+                );
 
                 return HomePage();
               },

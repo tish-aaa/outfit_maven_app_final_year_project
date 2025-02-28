@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'navbar.dart';
+import 'providers/user_provider.dart';
 
 class ContactPage extends StatefulWidget {
   @override
@@ -25,23 +26,20 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final String userId = user?.uid ?? '';
-    final String userName = user?.displayName ?? 'User';
-    final String profileImageUrl = user?.photoURL ?? 'https://via.placeholder.com/150';
+    final userProvider = Provider.of<UserProvider>(context);
+    String userId = userProvider.userId;
+    String userName = userProvider.username;
+    String profileImageUrl = userProvider.profileImageUrl.isNotEmpty
+        ? userProvider.profileImageUrl
+        : UserProvider.defaultProfileImage; // ✅ Fix: Use static accessor
 
     return Scaffold(
       key: _scaffoldKey,
-      appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(
-        userId: userId,
-        userName: userName,
-        profileImageUrl: profileImageUrl,
+      appBar: CustomAppBar(
+        scaffoldKey: _scaffoldKey,
       ),
-      endDrawer: CustomEndDrawer(
-        userName: userName,
-        profileImageUrl: profileImageUrl,
-      ),
+      drawer: CustomDrawer(),
+      endDrawer: CustomEndDrawer(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -63,8 +61,10 @@ class _ContactPageState extends State<ContactPage> {
                   borderRadius: BorderRadius.circular(15)),
               elevation: 5,
               child: ListTile(
-                leading: const Icon(Icons.email, color: Colors.blueAccent, size: 30),
-                title: const Text("Email Us", style: TextStyle(fontWeight: FontWeight.bold)),
+                leading:
+                    const Icon(Icons.email, color: Colors.blueAccent, size: 30),
+                title: const Text("Email Us",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text("contact@outfitmaven.com"),
                 onTap: () => _launchURL("mailto:contact@outfitmaven.com"),
               ),
@@ -76,7 +76,8 @@ class _ContactPageState extends State<ContactPage> {
               elevation: 5,
               child: ListTile(
                 leading: const Icon(Icons.phone, color: Colors.green, size: 30),
-                title: const Text("Call Us", style: TextStyle(fontWeight: FontWeight.bold)),
+                title: const Text("Call Us",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text("+123 456 7890"),
                 onTap: () => _launchURL("tel:+1234567890"),
               ),
@@ -97,21 +98,27 @@ class _ContactPageState extends State<ContactPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.facebook, color: Colors.blue),
+                  icon: const FaIcon(FontAwesomeIcons.facebook,
+                      color: Colors.blue),
                   iconSize: 40,
-                  onPressed: () => _launchURL("https://facebook.com/outfitmaven"),
+                  onPressed: () =>
+                      _launchURL("https://facebook.com/outfitmaven"),
                 ),
                 const SizedBox(width: 15),
                 IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.instagram, color: Colors.pink),
+                  icon: const FaIcon(FontAwesomeIcons.instagram,
+                      color: Colors.pink),
                   iconSize: 40,
-                  onPressed: () => _launchURL("https://instagram.com/outfitmaven"),
+                  onPressed: () =>
+                      _launchURL("https://instagram.com/outfitmaven"),
                 ),
                 const SizedBox(width: 15),
                 IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.twitter, color: Colors.lightBlue),
+                  icon: const FaIcon(FontAwesomeIcons.twitter,
+                      color: Colors.lightBlue),
                   iconSize: 40,
-                  onPressed: () => _launchURL("https://twitter.com/outfitmaven"),
+                  onPressed: () =>
+                      _launchURL("https://twitter.com/outfitmaven"),
                 ),
               ],
             ),

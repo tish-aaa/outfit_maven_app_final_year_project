@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_page.dart';
+import 'providers/user_provider.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -47,11 +49,12 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _authenticate() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    
+
     try {
       UserCredential userCredential;
       String userId;
-      
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+
       if (_isRegistering) {
         userCredential = await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
@@ -64,13 +67,28 @@ class _LoginPageState extends State<LoginPage> {
           'firstName': _firstNameController.text.trim(),
           'lastName': _lastNameController.text.trim(),
           'email': _emailController.text.trim(),
-          'profileImageUrl': 'assets/defaultprofile.png', // Set default profile image
+          'profileImageUrl': UserProvider.defaultProfileImage, // Use default profile image
         });
+
+        // Set user data in provider
+        userProvider.setUser(userId, _usernameController.text.trim(), UserProvider.defaultProfileImage);
       } else {
         userCredential = await _auth.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
+        userId = userCredential.user!.uid;
+
+        // Fetch user details from Firestore
+        DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          userProvider.setUser(
+            userId,
+            userData['username'] ?? 'Unknown User',
+            userData['profileImageUrl'] ?? UserProvider.defaultProfileImage,
+          );
+        }
       }
 
       if (!_isRegistering && _rememberMe) {
@@ -84,11 +102,8 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.remove('email');
         await prefs.remove('password');
       }
-      
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? 'Authentication Failed')),
@@ -176,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
                     if (_isRegistering) _buildTextField(_lastNameController, 'Last Name'),
                     _buildTextField(_emailController, 'Email'),
                     _buildTextField(_passwordController, 'Password', isPassword: true),
-                    
+
                     if (!_isRegistering)
                       Row(
                         children: [
@@ -191,19 +206,19 @@ class _LoginPageState extends State<LoginPage> {
                           Text("Remember Me"),
                         ],
                       ),
-                    
+
                     if (!_isRegistering)
                       TextButton(
                         onPressed: _recoverPassword,
                         child: Text("Forgot Password?", style: TextStyle(color: Colors.white70)),
                       ),
-                    
+
                     SizedBox(height: 16),
                     _loading ? CircularProgressIndicator() : ElevatedButton(
                       onPressed: _authenticate,
                       child: Text(_isRegistering ? 'Register' : 'Login'),
                     ),
-                    
+
                     TextButton(
                       onPressed: () => setState(() => _isRegistering = !_isRegistering),
                       child: Text(_isRegistering ? 'Already have an account? Login' : 'Don’t have an account? Register'),

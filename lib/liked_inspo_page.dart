@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'navbar.dart';
 import 'post_card.dart';
+import 'providers/user_provider.dart';
 
 class LikedInspoPage extends StatefulWidget {
-  final String userId;
-  final String userName;
-  final String profileImageUrl;
-
-  const LikedInspoPage({
-    super.key,
-    required this.userId,
-    required this.userName,
-    required this.profileImageUrl,
-  });
+  const LikedInspoPage({super.key});
 
   @override
   _LikedInspoPageState createState() => _LikedInspoPageState();
@@ -24,22 +17,20 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    String userId = userProvider.userId;
+    String userName = userProvider.username;
+    String profileImageUrl = userProvider.profileImageUrl;
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-      drawer: CustomDrawer(
-        userId: widget.userId,
-        userName: widget.userName,
-        profileImageUrl: widget.profileImageUrl,
-      ),
-      endDrawer: CustomEndDrawer(
-        userName: widget.userName,
-        profileImageUrl: widget.profileImageUrl,
-      ),
+      drawer: CustomDrawer(),
+      endDrawer: CustomEndDrawer(),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('liked_posts')
-            .where('userId', isEqualTo: widget.userId)
+            .where('userId', isEqualTo: userId)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -59,7 +50,7 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
                   !data.containsKey('imageUrl') ||
                   !data.containsKey('caption') ||
                   !data.containsKey('userId')) {
-                return const SizedBox.shrink(); // Skip invalid data
+                return const SizedBox.shrink();
               }
 
               return FutureBuilder<DocumentSnapshot>(
@@ -69,7 +60,7 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
                     .get(),
                 builder: (context, userSnapshot) {
                   if (userSnapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox.shrink(); // Show nothing while loading
+                    return const SizedBox.shrink();
                   }
 
                   final userData =
@@ -80,8 +71,8 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
                     imageUrl: data['imageUrl'],
                     caption: data['caption'],
                     userId: data['userId'],
-                    userName: userData?['userName'] ?? 'Unknown User',
-                    profileImageUrl: userData?['profileImageUrl'] ?? 'https://example.com/default_profile_image.png', // Ensure profile image is passed
+                    userName: userData?['userName'] ?? userName,
+                    profileImageUrl: userData?['profileImageUrl'] ?? UserProvider.defaultProfileImage,
                   );
                 },
               );
