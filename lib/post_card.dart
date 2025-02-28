@@ -1,237 +1,174 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
-class PostCard extends StatefulWidget {
+class OutfitPost extends StatefulWidget {
   final String postId;
-  final String imageUrl;
-  final String caption;
   final String userId;
+  final String imageUrl;
+  final String description;
   final String userName;
-  final String profileImageUrl; // Add profile image URL
+  final String profileImageUrl;
+  final bool isPrivate;
 
-  const PostCard({
+  const OutfitPost({
     required this.postId,
-    required this.imageUrl,
-    required this.caption,
     required this.userId,
+    required this.imageUrl,
+    required this.description,
     required this.userName,
-    required this.profileImageUrl, // Include in constructor
-    super.key,
+    required this.profileImageUrl,
+    required this.isPrivate,
   });
 
   @override
-  _PostCardState createState() => _PostCardState();
+  _OutfitPostState createState() => _OutfitPostState();
 }
 
-class _PostCardState extends State<PostCard> {
-  bool isLiked = false;
+class _OutfitPostState extends State<OutfitPost> {
+  bool _isPrivate = false;
+  bool _expanded = false;
   final TextEditingController _commentController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    checkIfLiked();
+    _isPrivate = widget.isPrivate;
   }
 
-  Future<void> checkIfLiked() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('liked_posts')
-        .where('userId', isEqualTo: widget.userId)
-        .where('postId', isEqualTo: widget.postId)
-        .get();
-
-    setState(() {
-      isLiked = snapshot.docs.isNotEmpty;
-    });
-  }
-
-  Future<void> toggleLike() async {
-    final likeRef = FirebaseFirestore.instance
-        .collection('liked_posts')
-        .doc(widget.userId + widget.postId);
-
-    final likeSnapshot = await likeRef.get();
-
-    if (likeSnapshot.exists) {
-      await likeRef.delete();
-      setState(() {
-        isLiked = false;
-      });
-    } else {
-      await likeRef.set({
-        'userId': widget.userId,
-        'postId': widget.postId,
-        'imageUrl': widget.imageUrl,
-        'caption': widget.caption,
-        'timestamp': Timestamp.now(),
-      });
-      setState(() {
-        isLiked = true;
-      });
-    }
-  }
-
-  Future<void> addComment() async {
-    String comment = _commentController.text.trim();
-    if (comment.isNotEmpty) {
-      try {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(widget.userId)
-            .get();
-
-        Map<String, dynamic>? userData =
-            userDoc.data() as Map<String, dynamic>?;
-
-        final userName = userData?['userName'] ?? 'Unknown User';
-
-        await FirebaseFirestore.instance
-            .collection('comments')
-            .doc(widget.postId)
-            .collection('postComments')
-            .add({
-          'userId': widget.userId,
-          'userName': userName,
-          'comment': comment,
-          'timestamp': Timestamp.now(),
+  void _togglePrivacy(BuildContext context) async {
+    if (!_isPrivate) {
+      bool? confirm = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Make Post Private"),
+          content: Text("Once private, this post cannot be made public again. Continue?"),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Cancel")),
+            TextButton(onPressed: () => Navigator.pop(context, true), child: Text("Yes")),
+          ],
+        ),
+      );
+      if (confirm == true) {
+        setState(() => _isPrivate = true);
+        await FirebaseFirestore.instance.collection('outfits').doc(widget.postId).update({
+          'isPrivate': true,
         });
-
-        _commentController.clear();
-      } catch (e) {
-        print("Error fetching user data: $e");
       }
     }
   }
 
-  void showComments() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('comments')
-              .doc(widget.postId)
-              .collection('postComments')
-              .orderBy('timestamp', descending: true)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return const Center(child: Text("No comments yet."));
-            }
-            return ListView(
-              padding: const EdgeInsets.all(10),
-              children: snapshot.data!.docs.map((doc) {
-                final commentData = doc.data() as Map<String, dynamic>?;
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      commentData?['comment'] ?? 'No comment',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.blueGrey,
-                      ),
-                    ),
-                    subtitle: Text(
-                      "User: ${commentData?['userName'] ?? 'Unknown User'}",
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ),
-                );
-              }).toList(),
-            );
-          },
-        );
-      },
-    );
+  void _addComment(BuildContext context, String comment) async {
+    if (comment.isEmpty) return;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    await FirebaseFirestore.instance
+        .collection('outfits')
+        .doc(widget.postId)
+        .collection('comments')
+        .add({
+      'userId': userProvider.userId,
+      'username': userProvider.username,
+      'profileImageUrl': userProvider.profileImageUrl,
+      'comment': comment,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+    _commentController.clear();
   }
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final bool isOwner = userProvider.userId == widget.userId;
+
     return Card(
-      margin: const EdgeInsets.all(10),
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
       child: Column(
         children: [
           ListTile(
             leading: CircleAvatar(
-              backgroundImage: NetworkImage(widget.profileImageUrl), // Display profile image
+              backgroundImage: NetworkImage(widget.profileImageUrl),
             ),
-            title: Text(
-              widget.userName,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey,
-              ),
-            ),
+            title: Text(widget.userName, style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(_isPrivate ? "Private Post" : "Public Post"),
+            trailing: isOwner
+                ? IconButton(
+                    icon: Icon(Icons.lock, color: _isPrivate ? Colors.red : Colors.grey),
+                    onPressed: () => _togglePrivacy(context),
+                  )
+                : null,
           ),
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-            child: Image.network(
-              widget.imageUrl,
-              height: 250,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          FadeInImage.assetNetwork(
+            placeholder: 'assets/loading_placeholder.jpg',
+            image: widget.imageUrl,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 200,
           ),
           Padding(
-            padding: const EdgeInsets.all(10),
-            child: Text(
-              widget.caption,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            padding: EdgeInsets.all(8.0),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _expanded = !_expanded;
+                });
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.description,
+                    maxLines: _expanded ? null : 1,
+                    overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                  ),
+                  if (!_expanded)
+                    Text("View More", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
           ),
-          Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  isLiked ? Icons.favorite : Icons.favorite_border,
-                  color: isLiked ? Colors.red : Colors.grey,
-                ),
-                onPressed: toggleLike,
-              ),
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12.0),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade50, Colors.blue.shade100],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
+          Divider(),
+          StreamBuilder(
+            stream: FirebaseFirestore.instance
+                .collection('outfits')
+                .doc(widget.postId)
+                .collection('comments')
+                .orderBy('timestamp', descending: true)
+                .snapshots(),
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (!snapshot.hasData) return CircularProgressIndicator();
+              return Column(
+                children: snapshot.data!.docs.map((doc) {
+                  var data = doc.data() as Map<String, dynamic>;
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(data['profileImageUrl'] ?? ''),
                     ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: TextField(
-                      controller: _commentController,
-                      decoration: const InputDecoration(
-                        hintText: "Add a comment...",
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      onSubmitted: (value) => addComment(),
+                    title: Text(data['username'] ?? 'Unknown User', style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(data['comment'] ?? ''),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _commentController,
+                    decoration: InputDecoration(
+                      hintText: "Write a comment...",
+                      border: OutlineInputBorder(),
                     ),
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.comment, color: Colors.blueGrey),
-                onPressed: showComments,
-              ),
-            ],
+                IconButton(
+                  icon: Icon(Icons.send, color: Colors.blue),
+                  onPressed: () => _addComment(context, _commentController.text),
+                ),
+              ],
+            ),
           ),
         ],
       ),

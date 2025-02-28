@@ -8,6 +8,7 @@ import 'login_page.dart';
 import 'liked_inspo_page.dart';
 import 'profile_page.dart';
 import 'outfit_quiz.dart';
+import 'my_outfits_page.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -37,6 +38,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           actions: [
             IconButton(
               icon: CircleAvatar(
+                radius: 24,
                 backgroundImage: profileImageUrl.isNotEmpty
                     ? NetworkImage(profileImageUrl)
                     : const AssetImage('assets/defaultprofile.png') as ImageProvider,
@@ -71,15 +73,15 @@ class CustomDrawer extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircleAvatar(
+                      radius: 50,
                       backgroundImage: userProvider.profileImageUrl.isNotEmpty
                           ? NetworkImage(userProvider.profileImageUrl)
                           : const AssetImage('assets/defaultprofile.png') as ImageProvider,
-                      radius: 40,
                     ),
                     const SizedBox(height: 10),
                     Text(
                       userProvider.username,
-                      style: const TextStyle(color: Colors.white, fontSize: 20),
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -106,6 +108,14 @@ class CustomDrawer extends StatelessWidget {
                 onTap: () {
                   Navigator.pushReplacement(
                       context, MaterialPageRoute(builder: (context) => OutfitQuizPage()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.shopping_bag, color: Colors.blueGrey),
+                title: const Text('My Outfits'),
+                onTap: () {
+                  Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (context) => MyOutfitsPage()));
                 },
               ),
               ListTile(
@@ -146,15 +156,15 @@ class CustomEndDrawer extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircleAvatar(
+                      radius: 50,
                       backgroundImage: userProvider.profileImageUrl.isNotEmpty
                           ? NetworkImage(userProvider.profileImageUrl)
                           : const AssetImage('assets/defaultprofile.png') as ImageProvider,
-                      radius: 40,
                     ),
                     const SizedBox(height: 10),
                     Text(
                       userProvider.username,
-                      style: const TextStyle(color: Colors.white, fontSize: 20),
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),

@@ -19,8 +19,6 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     String userId = userProvider.userId;
-    String userName = userProvider.username;
-    String profileImageUrl = userProvider.profileImageUrl;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -44,35 +42,30 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
           return ListView(
             children: snapshot.data!.docs.map((doc) {
               final data = doc.data() as Map<String, dynamic>?;
-
-              if (data == null ||
-                  !data.containsKey('postId') ||
-                  !data.containsKey('imageUrl') ||
-                  !data.containsKey('caption') ||
-                  !data.containsKey('userId')) {
+              if (data == null || !data.containsKey('postId')) {
                 return const SizedBox.shrink();
               }
 
-              return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(data['userId'])
-                    .get(),
-                builder: (context, userSnapshot) {
-                  if (userSnapshot.connectionState == ConnectionState.waiting) {
+              return StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('outfits')
+                    .doc(data['postId'])
+                    .snapshots(),
+                builder: (context, postSnapshot) {
+                  if (!postSnapshot.hasData || !postSnapshot.data!.exists) {
                     return const SizedBox.shrink();
                   }
 
-                  final userData =
-                      userSnapshot.data?.data() as Map<String, dynamic>?;
+                  final postData = postSnapshot.data!.data() as Map<String, dynamic>;
 
-                  return PostCard(
-                    postId: data['postId'],
-                    imageUrl: data['imageUrl'],
-                    caption: data['caption'],
-                    userId: data['userId'],
-                    userName: userData?['userName'] ?? userName,
-                    profileImageUrl: userData?['profileImageUrl'] ?? UserProvider.defaultProfileImage,
+                  return OutfitPost(
+                    postId: postData['postId'],
+                    imageUrl: postData['imageUrl'],
+                    description: postData['description'],
+                    userId: postData['userId'],
+                    userName: postData['userName'] ?? "Unknown",
+                    profileImageUrl: postData['profileImageUrl'] ?? UserProvider.defaultProfileImage,
+                    isPrivate: postData['isPrivate'] ?? false,
                   );
                 },
               );

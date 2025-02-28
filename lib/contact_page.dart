@@ -31,7 +31,7 @@ class _ContactPageState extends State<ContactPage> {
     String userName = userProvider.username;
     String profileImageUrl = userProvider.profileImageUrl.isNotEmpty
         ? userProvider.profileImageUrl
-        : UserProvider.defaultProfileImage; // ✅ Fix: Use static accessor
+        : UserProvider.defaultProfileImage; 
 
     return Scaffold(
       key: _scaffoldKey,
@@ -51,7 +51,7 @@ class _ContactPageState extends State<ContactPage> {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+                  color: const Color.fromARGB(255, 154, 182, 229),
                 ),
               ),
             ),
@@ -62,7 +62,7 @@ class _ContactPageState extends State<ContactPage> {
               elevation: 5,
               child: ListTile(
                 leading:
-                    const Icon(Icons.email, color: Colors.blueAccent, size: 30),
+                    const Icon(Icons.email, color: const Color.fromARGB(255, 154, 182, 229), size: 30),
                 title: const Text("Email Us",
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text("contact@outfitmaven.com"),
@@ -89,7 +89,7 @@ class _ContactPageState extends State<ContactPage> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+                  color: const Color.fromARGB(255, 154, 182, 229),
                 ),
               ),
             ),
@@ -128,7 +128,7 @@ class _ContactPageState extends State<ContactPage> {
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent),
+                  color: const Color.fromARGB(255, 154, 182, 229)),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -143,7 +143,7 @@ class _ContactPageState extends State<ContactPage> {
               child: ElevatedButton(
                 onPressed: () {}, // Add function to send feedback
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
+                  backgroundColor: const Color.fromARGB(255, 154, 182, 229),
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Submit Feedback'),

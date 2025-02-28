@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'post_card.dart';
 import 'navbar.dart';
@@ -19,9 +18,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    String userId = userProvider.userId;
-    String userName = userProvider.username;
-    String profileImageUrl = userProvider.profileImageUrl;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -46,39 +42,32 @@ class _HomePageState extends State<HomePage> {
               if (data == null ||
                   !data.containsKey('postId') ||
                   !data.containsKey('imageUrl') ||
-                  !data.containsKey('caption') ||
+                  !data.containsKey('description') ||
                   !data.containsKey('userId')) {
                 return const SizedBox.shrink();
               }
 
-              return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(data['userId'])
-                    .get(),
+              return FutureBuilder<Map<String, String>>(
+                future: userProvider.getUserInfo(data['userId']),
                 builder: (context, userSnapshot) {
-                  String profileImage =
-                      UserProvider.defaultProfileImage;
-                  String fetchedUserName = "Unknown User";
-
-                  if (userSnapshot.connectionState == ConnectionState.done &&
-                      userSnapshot.data != null &&
-                      userSnapshot.data!.data() != null) {
-                    Map<String, dynamic> userData =
-                        userSnapshot.data!.data() as Map<String, dynamic>;
-
-                    profileImage = userData['profileImageUrl'] ??
-                        UserProvider.defaultProfileImage;
-                    fetchedUserName = userData['userName'] ?? "Unknown User";
+                  if (userSnapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox.shrink();
                   }
 
-                  return PostCard(
+                  final userInfo = userSnapshot.data ??
+                      {
+                        "username": "Unknown User",
+                        "profileImageUrl": UserProvider.defaultProfileImage,
+                      };
+
+                  return OutfitPost(
                     postId: data['postId'],
                     imageUrl: data['imageUrl'],
-                    caption: data['caption'],
+                    description: data['description'],
                     userId: data['userId'],
-                    userName: fetchedUserName,
-                    profileImageUrl: profileImage,
+                    userName: userInfo["username"]!,
+                    profileImageUrl: userInfo["profileImageUrl"]!,
+                    isPrivate: data['isPrivate'] ?? false,
                   );
                 },
               );
