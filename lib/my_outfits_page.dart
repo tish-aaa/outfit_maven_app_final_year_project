@@ -12,12 +12,12 @@ class MyOutfitsPage extends StatefulWidget {
 }
 
 class _MyOutfitsPageState extends State<MyOutfitsPage> {
-  int _currentLayout = 1;
+  int _currentLayout = 0;
   final List<IconData> _layoutIcons = [
     Icons.grid_on,
     Icons.grid_view,
     Icons.view_comfy,
-    Icons.list
+    Icons.list,
   ];
   Set<String> _selectedPosts = {};
   bool _isSelecting = false;
@@ -58,14 +58,7 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
             "Are you sure you want to delete ${_selectedPosts.length} selected outfits? This action cannot be undone."),
         actions: [
           TextButton(
-            onPressed: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              } else {
-                Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (context) => HomePage()));
-              }
-            },
+            onPressed: () => Navigator.pop(context),
             child: Text("Cancel"),
           ),
           TextButton(
@@ -136,69 +129,63 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
           return RefreshIndicator(
             onRefresh: _refreshPosts,
             color: Colors.blue.shade100,
-            child: Column(
-              children: [
-                Expanded(
-                  child: _currentLayout == 3
-                      ? ListView.builder(
-                          itemCount: posts.length,
-                          itemBuilder: (context, index) {
-                            var post =
-                                posts[index].data() as Map<String, dynamic>? ??
-                                    {};
-                            return SelectablePost(
-                              postId: post['postId'] ?? '',
-                              imageUrl: post['imageUrl'] ?? '',
-                              description:
-                                  post['description'] ?? 'No description',
-                              userId: post['userId'] ?? '',
-                              userName: userProvider.username,
-                              profileImageUrl: userProvider.profileImageUrl,
-                              isPrivate: post['isPrivate'] ?? false,
-                              isSelected:
-                                  _selectedPosts.contains(post['postId']),
-                              onSelect: _toggleSelect,
-                            );
-                          },
-                        )
-                      : GridView.builder(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: _currentLayout == 0
-                                ? 3
-                                : _currentLayout == 1
-                                    ? 2
-                                    : 1,
-                            childAspectRatio: _currentLayout == 1 ? 1 : 0.8,
-                          ),
-                          itemCount: posts.length,
-                          itemBuilder: (context, index) {
-                            var post =
-                                posts[index].data() as Map<String, dynamic>? ??
-                                    {};
-                            return SelectablePost(
-                              postId: post['postId'] ?? '',
-                              imageUrl: post['imageUrl'] ?? '',
-                              description:
-                                  post['description'] ?? 'No description',
-                              userId: post['userId'] ?? '',
-                              userName: userProvider.username,
-                              profileImageUrl: userProvider.profileImageUrl,
-                              isPrivate: post['isPrivate'] ?? false,
-                              isSelected:
-                                  _selectedPosts.contains(post['postId']),
-                              onSelect: _toggleSelect,
-                            );
-                          },
+            child: _currentLayout == 3
+                ? ListView.builder(
+                    padding: EdgeInsets.all(8),
+                    itemCount: posts.length,
+                    itemBuilder: (context, index) {
+                      var post = posts[index].data() as Map<String, dynamic>? ?? {};
+                      return ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: 100),
+                        child: SelectablePost(
+                          postId: post['postId'] ?? '',
+                          imageUrl: post['imageUrl'] ?? '',
+                          description: post['description'] ?? 'No description',
+                          userId: post['userId'] ?? '',
+                          userName: userProvider.username,
+                          profileImageUrl: userProvider.profileImageUrl,
+                          isPrivate: post['isPrivate'] ?? false,
+                          isSelected: _selectedPosts.contains(post['postId']),
+                          onSelect: _toggleSelect,
                         ),
-                ),
-              ],
-            ),
+                      );
+                    },
+                  )
+                : GridView.builder(
+                    padding: EdgeInsets.all(8),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: _currentLayout == 0 ? 3 : _currentLayout == 1 ? 2 : 1,
+                      childAspectRatio: _currentLayout == 2 ? 1.5 : 0.8,
+                    ),
+                    itemCount: posts.length,
+                    itemBuilder: (context, index) {
+                      var post = posts[index].data() as Map<String, dynamic>? ?? {};
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          return ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                              maxHeight: constraints.maxHeight,
+                            ),
+                            child: SelectablePost(
+                              postId: post['postId'] ?? '',
+                              imageUrl: post['imageUrl'] ?? '',
+                              description: post['description'] ?? 'No description',
+                              userId: post['userId'] ?? '',
+                              userName: userProvider.username,
+                              profileImageUrl: userProvider.profileImageUrl,
+                              isPrivate: post['isPrivate'] ?? false,
+                              isSelected: _selectedPosts.contains(post['postId']),
+                              onSelect: _toggleSelect,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
           );
         },
       ),
-      
-      /// FIXED BOTTOM ICONS
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         shape: CircularNotchedRectangle(),
@@ -218,9 +205,7 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                     : null,
               ),
               IconButton(
-                icon: Icon(Icons.delete,
-                    size: 30,
-                    color: _selectedPosts.isNotEmpty ? Colors.red : null),
+                icon: Icon(Icons.delete, size: 30, color: _selectedPosts.isNotEmpty ? Colors.red : null),
                 onPressed: _selectedPosts.isNotEmpty ? _confirmDelete : null,
               ),
             ],

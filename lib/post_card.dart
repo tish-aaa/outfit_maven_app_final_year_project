@@ -71,11 +71,32 @@ class _OutfitPostState extends State<OutfitPost> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.5, // Covers half the screen
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentController,
+                        decoration: InputDecoration(
+                          hintText: "Write a comment...",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.send, color: Colors.blue),
+                      onPressed: _addComment,
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: StreamBuilder(
                   stream: FirebaseFirestore.instance
@@ -99,26 +120,6 @@ class _OutfitPostState extends State<OutfitPost> {
                       }).toList(),
                     );
                   },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _commentController,
-                        decoration: InputDecoration(
-                          hintText: "Write a comment...",
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.send, color: Colors.blue),
-                      onPressed: () => _addComment(),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -148,36 +149,50 @@ class _OutfitPostState extends State<OutfitPost> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Column(
+      child: Stack(
         children: [
-          FadeInImage.assetNetwork(
-            placeholder: 'assets/loading_placeholder.jpg',
-            image: widget.imageUrl,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: 300, // 3/4 orientation
-          ),
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text(
-              widget.description,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
             children: [
-              IconButton(
-                icon: Icon(_isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: _isLiked ? Colors.red : Colors.grey),
-                onPressed: _toggleLike,
+              FadeInImage.assetNetwork(
+                placeholder: 'assets/loading_placeholder.jpg',
+                image: widget.imageUrl,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 300, // 3/4 orientation
               ),
-              IconButton(
-                icon: Icon(Icons.comment, color: Colors.blue),
-                onPressed: _openComments,
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  widget.description,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                        _isLiked ? Icons.favorite : Icons.favorite_border,
+                        color: _isLiked ? Colors.red : Colors.grey),
+                    onPressed: _toggleLike,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.comment, color: Colors.blue),
+                    onPressed: _openComments,
+                  ),
+                ],
               ),
             ],
+          ),
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Icon(
+              _isPrivate ? Icons.lock : Icons.lock_open,
+              color: _isPrivate ? Colors.red : Colors.white,
+              size: 24,
+            ),
           ),
         ],
       ),

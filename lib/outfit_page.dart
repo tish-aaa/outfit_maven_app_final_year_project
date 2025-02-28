@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'providers/user_provider.dart';
 
@@ -17,8 +16,10 @@ class OutfitPage extends StatefulWidget {
 class _OutfitPageState extends State<OutfitPage> {
   final TextEditingController _descriptionController = TextEditingController();
   bool _isPrivate = false;
+  bool _wasPrivate = false;
   bool _isLoading = false;
   String? _imageUrl;
+  bool _showWarning = false;
 
   @override
   void initState() {
@@ -37,10 +38,10 @@ class _OutfitPageState extends State<OutfitPage> {
       var data = postDoc.data() as Map<String, dynamic>;
 
       setState(() {
-        _descriptionController.text =
-            data['description'] ?? ''; // Default to empty string
+        _descriptionController.text = data['description'] ?? '';
         _isPrivate = data['isPrivate'] ?? false;
-        _imageUrl = data['imageUrl'] ?? ''; // Default to empty string
+        _wasPrivate = _isPrivate;
+        _imageUrl = data['imageUrl'] ?? '';
       });
     }
   }
@@ -125,14 +126,12 @@ class _OutfitPageState extends State<OutfitPage> {
   }
 
   void _handlePrivacyToggle(bool newValue) {
-    if (newValue && widget.postId != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text("Once private, this outfit cannot be made public again.")),
-      );
+    if (!_wasPrivate) {
+      setState(() {
+        _isPrivate = newValue;
+        _showWarning = newValue;
+      });
     }
-    setState(() => _isPrivate = newValue);
   }
 
   @override
@@ -164,10 +163,19 @@ class _OutfitPageState extends State<OutfitPage> {
               Text("Make Private"),
               Switch(
                 value: _isPrivate,
-                onChanged: widget.postId == null ? _handlePrivacyToggle : null,
+                onChanged: _wasPrivate ? null : _handlePrivacyToggle,
+                activeColor: Colors.red,
               ),
             ],
           ),
+          if (_showWarning)
+            Padding(
+              padding: const EdgeInsets.only(top: 5.0),
+              child: Text(
+                "Once private, this outfit cannot be made public again.",
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
         ],
       ),
       actions: [
