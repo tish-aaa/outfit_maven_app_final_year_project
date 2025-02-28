@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +32,7 @@ class _ContactPageState extends State<ContactPage> {
     String userName = userProvider.username;
     String profileImageUrl = userProvider.profileImageUrl.isNotEmpty
         ? userProvider.profileImageUrl
-        : UserProvider.defaultProfileImage; 
+        : UserProvider.defaultProfileImage;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -51,8 +52,16 @@ class _ContactPageState extends State<ContactPage> {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 154, 182, 229),
+                  color: const Color.fromARGB(255, 46, 79, 199),
                 ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: Lottie.asset(
+                'assets/contact_us.json', // Ensure the animation file is added to assets
+                width: 250,
+                height: 250,
               ),
             ),
             const SizedBox(height: 20),
@@ -62,7 +71,7 @@ class _ContactPageState extends State<ContactPage> {
               elevation: 5,
               child: ListTile(
                 leading:
-                    const Icon(Icons.email, color: const Color.fromARGB(255, 154, 182, 229), size: 30),
+                    const Icon(Icons.email, color: Color.fromARGB(255, 46, 79, 199), size: 30),
                 title: const Text("Email Us",
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text("contact@outfitmaven.com"),
@@ -89,7 +98,7 @@ class _ContactPageState extends State<ContactPage> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 154, 182, 229),
+                  color: const Color.fromARGB(255, 46, 79, 199),
                 ),
               ),
             ),
@@ -121,33 +130,6 @@ class _ContactPageState extends State<ContactPage> {
                       _launchURL("https://twitter.com/outfitmaven"),
                 ),
               ],
-            ),
-            const SizedBox(height: 30),
-            Text(
-              'Feedback:',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 154, 182, 229)),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Write your suggestions...',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {}, // Add function to send feedback
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 154, 182, 229),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Submit Feedback'),
-              ),
             ),
           ],
         ),

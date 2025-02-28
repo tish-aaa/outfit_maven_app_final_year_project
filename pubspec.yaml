@@ -38,3 +38,4 @@ flutter:
     - assets/defaultprofile.png
     - assets/quiz_animation.json
     - assets/login_animation.json
+    - assets/contact_us.json
