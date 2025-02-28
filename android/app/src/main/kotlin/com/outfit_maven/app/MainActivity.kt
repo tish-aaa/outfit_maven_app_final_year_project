@@ -1,4 +1,4 @@
-package com.example.flutter_app_2
+package com.outfit_maven.app
 
 import io.flutter.embedding.android.FlutterActivity
 

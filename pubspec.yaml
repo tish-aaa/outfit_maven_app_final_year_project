@@ -1,4 +1,4 @@
-name: flutter_app_2
+name: outfit_maven
 description: "A new Flutter project."
 publish_to: 'none'
 version: 0.1.0
@@ -23,6 +23,7 @@ dependencies:
   fl_chart: ^0.40.0
   animate_do: ^4.2.0
   lottie: ^2.6.0 
+  change_app_package_name: ^1.5.0
 
 dev_dependencies:
   flutter_test:
