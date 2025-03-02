@@ -16,12 +16,27 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late PageController _quotesController;
-  List<String> fashionQuotes = [
-    "Fashion is the armor to survive the reality of everyday life.",
-    "Style is a way to say who you are without having to speak.",
-    "Fashion is what you buy. Style is what you do with it.",
-    "Clothes mean nothing until someone lives in them.",
-    "In order to be irreplaceable one must always be different."
+  List<Map<String, String>> fashionQuotes = [
+    {
+      "quote": "Fashion is the armor to survive the reality of everyday life.",
+      "author": "Bill Cunningham"
+    },
+    {
+      "quote": "Style is a way to say who you are without having to speak.",
+      "author": "Rachel Zoe"
+    },
+    {
+      "quote": "Fashion is what you buy. Style is what you do with it.",
+      "author": "Nicky Hilton"
+    },
+    {
+      "quote": "Clothes mean nothing until someone lives in them.",
+      "author": "Marc Jacobs"
+    },
+    {
+      "quote": "In order to be irreplaceable one must always be different.",
+      "author": "Coco Chanel"
+    },
   ];
 
   @override
@@ -62,22 +77,74 @@ class _HomePageState extends State<HomePage> {
         children: [
           // Fashion Quotes Carousel
           Container(
-            height: 50.0,
-            color: Color(0xFF70C2BD),
+            padding: EdgeInsets.all(16.0),
+            margin: EdgeInsets.symmetric(vertical: 10.0),
+            decoration: BoxDecoration(
+              color: Color(0xFFE0F2F1),  // Background color
+              borderRadius: BorderRadius.circular(30),  // Cloud-like round edges
+              border: Border.all(color: Color(0xFF298A90), width: 2), // Border color
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.4),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: Offset(0, 3), // Shadow direction
+                ),
+              ],
+            ),
             child: PageView.builder(
               controller: _quotesController,
               itemCount: fashionQuotes.length,
               itemBuilder: (context, index) {
-                return Center(
-                  child: Text(
-                    fashionQuotes[index],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.0,
-                      fontStyle: FontStyle.italic,
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Big Quote Marks
+                    Row(
+                      children: [
+                        Text(
+                          '"',
+                          style: TextStyle(
+                            fontSize: 50.0,
+                            color: Color(0xFF298A90),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 8.0),
+                        Expanded(
+                          child: Text(
+                            fashionQuotes[index]["quote"]!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFF298A90),
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold, // Bold text
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.0),
+                        Text(
+                          '"',
+                          style: TextStyle(
+                            fontSize: 50.0,
+                            color: Color(0xFF298A90),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    SizedBox(height: 10),
+                    // Fashion designer/celebrity name
+                    Text(
+                      fashionQuotes[index]["author"]!,
+                      style: TextStyle(
+                        color: Color(0xFF298A90),
+                        fontSize: 14.0,
+                        fontWeight: FontWeight.w600,  // Name in bold
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
