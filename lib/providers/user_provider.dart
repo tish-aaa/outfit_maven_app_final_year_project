@@ -15,7 +15,8 @@ class UserProvider with ChangeNotifier {
 
   String get userId => _userId.isNotEmpty ? _userId : 'unknown_user';
   String get username => _username.isNotEmpty ? _username : 'Unknown User';
-  String get profileImageUrl => _profileImageUrl.isNotEmpty ? _profileImageUrl : defaultProfileImage;
+  String get profileImageUrl =>
+      _profileImageUrl.isNotEmpty ? _profileImageUrl : defaultProfileImage;
   Set<String> get likedPosts => _likedPosts;
 
   final CloudinaryPublic _cloudinary = CloudinaryPublic(
@@ -47,16 +48,30 @@ class UserProvider with ChangeNotifier {
     _username = 'Unknown User';
     _profileImageUrl = defaultProfileImage;
     _likedPosts.clear();
-    notifyListeners();
+    notifyListeners(); // Notify when the user logs out and data resets
   }
 
   void _listenToUserData() {
-    FirebaseFirestore.instance.collection('users').doc(_userId).snapshots().listen((snapshot) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(_userId)
+        .snapshots()
+        .listen((snapshot) {
       if (snapshot.exists) {
         final data = snapshot.data() as Map<String, dynamic>;
-        _username = data['username'] ?? 'Unknown User';
-        _profileImageUrl = data['profileImageUrl'] ?? defaultProfileImage;
-        notifyListeners();
+        final newUsername = data['username'] ?? 'Unknown User';
+        final newProfileImageUrl =
+            data['profileImageUrl'] ?? defaultProfileImage;
+
+        // Debugging line: Print the profile image URL
+        print("Profile image URL: $newProfileImageUrl");
+
+        if (_username != newUsername ||
+            _profileImageUrl != newProfileImageUrl) {
+          _username = newUsername;
+          _profileImageUrl = newProfileImageUrl;
+          notifyListeners(); // Only notify when actual changes occur
+        }
       }
     });
   }
@@ -68,8 +83,12 @@ class UserProvider with ChangeNotifier {
         .collection('likedPosts')
         .snapshots()
         .listen((snapshot) {
-      _likedPosts = snapshot.docs.map((doc) => doc.id).toSet();
-      notifyListeners();
+      final newLikedPosts = snapshot.docs.map((doc) => doc.id).toSet();
+      print("Liked posts: $newLikedPosts"); // Debugging line
+      if (_likedPosts != newLikedPosts) {
+        _likedPosts = newLikedPosts;
+        notifyListeners();
+      }
     });
   }
 
@@ -82,16 +101,20 @@ class UserProvider with ChangeNotifier {
 
     if (_likedPosts.contains(postId)) {
       await likeRef.delete();
+      _likedPosts.remove(postId); // Remove from local set
     } else {
       await likeRef.set({'likedAt': FieldValue.serverTimestamp()});
+      _likedPosts.add(postId); // Add to local set
     }
+    notifyListeners();
   }
 
   Future<String?> uploadImageToCloudinary() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       try {
-        String uniqueFileName = "profile_${_userId}_${DateTime.now().millisecondsSinceEpoch}";
+        String uniqueFileName =
+            "profile_${_userId}_${DateTime.now().millisecondsSinceEpoch}";
 
         CloudinaryResponse response = await _cloudinary.uploadFile(
           CloudinaryFile.fromFile(image.path,
@@ -109,10 +132,12 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> updateProfileImage(String newImageUrl) async {
-    if (_userId.isNotEmpty) {
+    if (_userId.isNotEmpty && _profileImageUrl != newImageUrl) {
       await FirebaseFirestore.instance.collection('users').doc(_userId).update({
         'profileImageUrl': newImageUrl,
       });
+      _profileImageUrl = newImageUrl; // Update locally and notify listeners
+      notifyListeners();
     }
   }
 }

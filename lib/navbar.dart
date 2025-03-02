@@ -27,7 +27,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         String profileImageUrl = userProvider.profileImageUrl;
 
         return AppBar(
-          backgroundColor: const Color(0xFF1DCFCA),
+          backgroundColor: const Color(0xFF70C2BD),
           leading: IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
             onPressed: () {

@@ -10,8 +10,8 @@ class OutfitPost extends StatefulWidget {
   final String userId;
   final String imageUrl;
   final String description;
-  final String userName;
-  final String profileImageUrl;
+  final String userName; // Original creator's username
+  final String profileImageUrl; // Original creator's profile image URL
   final bool isPrivate;
 
   const OutfitPost({
@@ -38,13 +38,15 @@ class _OutfitPostState extends State<OutfitPost> {
   void initState() {
     super.initState();
     _isPrivate = widget.isPrivate;
-    _fetchLikeStatus();
     _fetchLikeCount();
+    _fetchLikeStatus();
   }
 
   void _fetchLikeStatus() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    setState(() => _isLiked = userProvider.likedPosts.contains(widget.postId));
+    setState(() {
+      _isLiked = userProvider.likedPosts.contains(widget.postId);
+    });
   }
 
   void _fetchLikeCount() {
@@ -63,6 +65,7 @@ class _OutfitPostState extends State<OutfitPost> {
   void _toggleLike() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     userProvider.toggleLike(widget.postId);
+    _fetchLikeStatus();
   }
 
   void _openComments() {
@@ -87,6 +90,7 @@ class _OutfitPostState extends State<OutfitPost> {
                     Expanded(
                       child: TextField(
                         controller: _commentController,
+                        maxLines: 1, // Limit to 1 line of text
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.white,
@@ -95,13 +99,13 @@ class _OutfitPostState extends State<OutfitPost> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF70C2BD)),
+                            borderSide: BorderSide(color: Color(0xFF298A90)),
                           ),
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.send, color: Color(0xFF70C2BD)),
+                      icon: Icon(Icons.send, color: Color(0xFF298A90)),
                       onPressed: _addComment,
                     ),
                   ],
@@ -125,10 +129,19 @@ class _OutfitPostState extends State<OutfitPost> {
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundImage: CachedNetworkImageProvider(
-                                data['profileImageUrl'] ?? ''),
+                                data['profileImageUrl'] ?? 'assets/defaultprofile.png'),
                           ),
-                          title: Text(data['username'] ?? 'Unknown User'),
-                          subtitle: Text(data['comment'] ?? ''),
+                          title: Text(
+                            data['username'] ?? 'Unknown User',
+                            style: TextStyle(
+                              color: Color(0xFF298A90),
+                              fontWeight: FontWeight.bold, // Make username bolder
+                            ),
+                          ),
+                          subtitle: Text(
+                            data['comment'] ?? '',
+                            style: TextStyle(color: Color(0xFF298A90)),
+                          ),
                         );
                       }).toList(),
                     );
@@ -171,8 +184,11 @@ class _OutfitPostState extends State<OutfitPost> {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundImage:
-                      CachedNetworkImageProvider(widget.profileImageUrl),
+                  backgroundImage: CachedNetworkImageProvider(
+                    widget.profileImageUrl.isNotEmpty
+                        ? widget.profileImageUrl
+                        : 'assets/defaultprofile.png', // Use default if empty
+                  ),
                 ),
                 SizedBox(width: 10),
                 Text(widget.userName,
@@ -202,17 +218,27 @@ class _OutfitPostState extends State<OutfitPost> {
             children: [
               Row(
                 children: [
-                  Text(_likeCount.toString()),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 11.0), // Add space before like count
+                    child: Text(
+                      _likeCount.toString(),
+                      style: TextStyle(
+                        color: Color(0xFF298A90), // Same color as comment box
+                        fontWeight: FontWeight.bold, // Make like count bold
+                      ),
+                    ),
+                  ),
                   IconButton(
                     icon: Icon(
-                        _isLiked ? Icons.favorite : Icons.favorite_border,
-                        color: _isLiked ? Colors.red : Colors.grey),
+                      _isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: _isLiked ? Color(0xFF298A90) : Color(0xFF298A90), // Change color to #19a99f when liked
+                    ),
                     onPressed: _toggleLike,
                   ),
                 ],
               ),
               IconButton(
-                  icon: Icon(Icons.comment, color: Color(0xFF70C2BD)),
+                  icon: Icon(Icons.comment, color: Color(0xFF298A90)),
                   onPressed: _openComments),
             ],
           ),
@@ -221,3 +247,4 @@ class _OutfitPostState extends State<OutfitPost> {
     );
   }
 }
+
