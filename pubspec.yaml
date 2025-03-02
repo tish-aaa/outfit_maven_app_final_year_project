@@ -44,4 +44,5 @@ flutter:
     - assets/login_animation.json
     - assets/contact_us.json
     - assets/outfit_maven_logo.png
+    - assets/quote.jpg
     - assets/manual.pdf

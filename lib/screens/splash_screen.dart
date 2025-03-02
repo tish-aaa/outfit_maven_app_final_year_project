@@ -51,14 +51,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Image.asset('assets/outfit_maven_logo.png', width: 150),
               ),
             ),
-            SizedBox(height: 10),
-            FadeTransition(
-              opacity: _animation,
-              child: Text(
-                "Outfit Maven",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.2),
-              ),
-            ),
+            SizedBox(height: 20),
           ],
         ),
       ),
