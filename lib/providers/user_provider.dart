@@ -11,10 +11,12 @@ class UserProvider with ChangeNotifier {
   String _userId = '';
   String _username = 'Unknown User';
   String _profileImageUrl = defaultProfileImage;
+  Set<String> _likedPosts = {}; // Track liked posts in real-time
 
   String get userId => _userId.isNotEmpty ? _userId : 'unknown_user';
   String get username => _username.isNotEmpty ? _username : 'Unknown User';
   String get profileImageUrl => _profileImageUrl.isNotEmpty ? _profileImageUrl : defaultProfileImage;
+  Set<String> get likedPosts => _likedPosts;
 
   final CloudinaryPublic _cloudinary = CloudinaryPublic(
     'dzj8zymjz',
@@ -31,7 +33,9 @@ class UserProvider with ChangeNotifier {
   void _listenToAuthChanges() {
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (user != null) {
-        fetchUserData();
+        _userId = user.uid;
+        _listenToUserData();
+        _listenToLikedPosts();
       } else {
         _resetUserData();
       }
@@ -42,66 +46,52 @@ class UserProvider with ChangeNotifier {
     _userId = '';
     _username = 'Unknown User';
     _profileImageUrl = defaultProfileImage;
+    _likedPosts.clear();
     notifyListeners();
   }
 
-  void updateUser(
-      {required String id, required String name, required String imageUrl}) {
-    _userId = id.isNotEmpty ? id : 'unknown_user';
-    _username = name.isNotEmpty ? name : 'Unknown User';
-    _profileImageUrl = imageUrl.isNotEmpty ? imageUrl : defaultProfileImage;
-    notifyListeners();
+  void _listenToUserData() {
+    FirebaseFirestore.instance.collection('users').doc(_userId).snapshots().listen((snapshot) {
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        _username = data['username'] ?? 'Unknown User';
+        _profileImageUrl = data['profileImageUrl'] ?? defaultProfileImage;
+        notifyListeners();
+      }
+    });
   }
 
-  Future<void> fetchUserData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      if (userDoc.exists) {
-        final userData = userDoc.data() as Map<String, dynamic>;
-        updateUser(
-          id: user.uid,
-          name: userData['username'] ?? 'Unknown User',
-          imageUrl: userData['profileImageUrl'] ?? '',
-        );
-      }
-    }
+  void _listenToLikedPosts() {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(_userId)
+        .collection('likedPosts')
+        .snapshots()
+        .listen((snapshot) {
+      _likedPosts = snapshot.docs.map((doc) => doc.id).toSet();
+      notifyListeners();
+    });
   }
 
-  Future<Map<String, String>> getUserInfo(String userId) async {
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
+  Future<void> toggleLike(String postId) async {
+    final likeRef = FirebaseFirestore.instance
+        .collection('outfits')
+        .doc(postId)
+        .collection('likes')
+        .doc(_userId);
 
-      if (userDoc.exists && userDoc.data() != null) {
-        final Map<String, dynamic> data =
-            userDoc.data() as Map<String, dynamic>;
-
-        return {
-          'username': data['username']?.toString() ?? 'Unknown User',
-          'profileImageUrl': data['profileImageUrl']?.toString() ?? defaultProfileImage,
-        };
-      }
-    } catch (e) {
-      print("Error fetching user info: $e");
+    if (_likedPosts.contains(postId)) {
+      await likeRef.delete();
+    } else {
+      await likeRef.set({'likedAt': FieldValue.serverTimestamp()});
     }
-    return {
-      'username': 'Unknown User',
-      'profileImageUrl': defaultProfileImage,
-    };
   }
 
   Future<String?> uploadImageToCloudinary() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       try {
-        String uniqueFileName =
-            "profile_${_userId}_${DateTime.now().millisecondsSinceEpoch}";
+        String uniqueFileName = "profile_${_userId}_${DateTime.now().millisecondsSinceEpoch}";
 
         CloudinaryResponse response = await _cloudinary.uploadFile(
           CloudinaryFile.fromFile(image.path,
@@ -120,12 +110,8 @@ class UserProvider with ChangeNotifier {
 
   Future<void> updateProfileImage(String newImageUrl) async {
     if (_userId.isNotEmpty) {
-      _profileImageUrl =
-          newImageUrl.isNotEmpty ? newImageUrl : defaultProfileImage;
-      notifyListeners();
-
       await FirebaseFirestore.instance.collection('users').doc(_userId).update({
-        'profileImageUrl': _profileImageUrl,
+        'profileImageUrl': newImageUrl,
       });
     }
   }

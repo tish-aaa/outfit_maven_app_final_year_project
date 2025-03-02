@@ -28,17 +28,10 @@ class _ContactPageState extends State<ContactPage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    String userId = userProvider.userId;
-    String userName = userProvider.username;
-    String profileImageUrl = userProvider.profileImageUrl.isNotEmpty
-        ? userProvider.profileImageUrl
-        : UserProvider.defaultProfileImage;
 
     return Scaffold(
       key: _scaffoldKey,
-      appBar: CustomAppBar(
-        scaffoldKey: _scaffoldKey,
-      ),
+      appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
       drawer: CustomDrawer(),
       endDrawer: CustomEndDrawer(),
       body: SingleChildScrollView(
@@ -52,45 +45,22 @@ class _ContactPageState extends State<ContactPage> {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 46, 79, 199),
+                  color: Color(0xFF1DCFCA),
                 ),
               ),
             ),
             const SizedBox(height: 20),
             Center(
               child: Lottie.asset(
-                'assets/contact_us.json', // Ensure the animation file is added to assets
+                'assets/contact_us.json',
                 width: 250,
                 height: 250,
               ),
             ),
             const SizedBox(height: 20),
-            Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              elevation: 5,
-              child: ListTile(
-                leading:
-                    const Icon(Icons.email, color: Color.fromARGB(255, 46, 79, 199), size: 30),
-                title: const Text("Email Us",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text("contact@outfitmaven.com"),
-                onTap: () => _launchURL("mailto:contact@outfitmaven.com"),
-              ),
-            ),
+            _buildContactCard(Icons.email, "Email Us", "contact@outfitmaven.com", "mailto:contact@outfitmaven.com"),
             const SizedBox(height: 10),
-            Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              elevation: 5,
-              child: ListTile(
-                leading: const Icon(Icons.phone, color: Colors.green, size: 30),
-                title: const Text("Call Us",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text("+123 456 7890"),
-                onTap: () => _launchURL("tel:+1234567890"),
-              ),
-            ),
+            _buildContactCard(Icons.phone, "Call Us", "+123 456 7890", "tel:+1234567890"),
             const SizedBox(height: 20),
             Center(
               child: Text(
@@ -98,42 +68,49 @@ class _ContactPageState extends State<ContactPage> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 46, 79, 199),
+                  color: Color(0xFF1DCFCA),
                 ),
               ),
             ),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.facebook,
-                      color: Colors.blue),
-                  iconSize: 40,
-                  onPressed: () =>
-                      _launchURL("https://facebook.com/outfitmaven"),
-                ),
-                const SizedBox(width: 15),
-                IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.instagram,
-                      color: Colors.pink),
-                  iconSize: 40,
-                  onPressed: () =>
-                      _launchURL("https://instagram.com/outfitmaven"),
-                ),
-                const SizedBox(width: 15),
-                IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.twitter,
-                      color: Colors.lightBlue),
-                  iconSize: 40,
-                  onPressed: () =>
-                      _launchURL("https://twitter.com/outfitmaven"),
-                ),
-              ],
-            ),
+            _buildSocialIcons(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildContactCard(IconData icon, String title, String subtitle, String url) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 5,
+      child: ListTile(
+        leading: Icon(icon, color: Color(0xFF1DCFCA), size: 30),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle),
+        onTap: () => _launchURL(url),
+      ),
+    );
+  }
+
+  Widget _buildSocialIcons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildSocialIcon(FontAwesomeIcons.facebook, Colors.blue, "https://facebook.com/outfitmaven"),
+        const SizedBox(width: 15),
+        _buildSocialIcon(FontAwesomeIcons.instagram, Colors.pink, "https://instagram.com/outfitmaven"),
+        const SizedBox(width: 15),
+        _buildSocialIcon(FontAwesomeIcons.twitter, Colors.lightBlue, "https://twitter.com/outfitmaven"),
+      ],
+    );
+  }
+
+  Widget _buildSocialIcon(IconData icon, Color color, String url) {
+    return IconButton(
+      icon: FaIcon(icon, color: color),
+      iconSize: 40,
+      onPressed: () => _launchURL(url),
     );
   }
 }

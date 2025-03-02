@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
 import 'login_page.dart';
 import 'home_page.dart';
+import '../screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +15,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()..fetchUserData()), // ✅ Fetch user data on startup
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const MainApp(),
     ),
@@ -42,7 +43,7 @@ class MainApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const AuthWrapper(),
+      home: const SplashScreen(),
     );
   }
 }
@@ -61,28 +62,8 @@ class AuthWrapper extends StatelessWidget {
           if (user == null) {
             return LoginPage();
           } else {
-            return FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Scaffold(body: Center(child: CircularProgressIndicator()));
-                }
-                if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return LoginPage();
-                }
-
-                final userData = snapshot.data!.data() as Map<String, dynamic>;
-
-                final userProvider = Provider.of<UserProvider>(context, listen: false);
-                userProvider.updateUser(
-                  id: user.uid,
-                  name: userData['username'] ?? 'Unknown User',
-                  imageUrl: userData['profileImageUrl'] ?? '',
-                );
-
-                return HomePage();
-              },
-            );
+            // UserProvider already handles user data updates
+            return HomePage();
           }
         }
         return const Scaffold(body: Center(child: CircularProgressIndicator()));

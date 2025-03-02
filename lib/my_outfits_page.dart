@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'providers/user_provider.dart';
 import 'selectable_post.dart';
 import 'outfit_page.dart';
@@ -97,7 +98,16 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
         title: Text('My Outfits'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => HomePage()),
+              );
+            }
+          },
         ),
         actions: [
           IconButton(
@@ -134,52 +144,56 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                     padding: EdgeInsets.all(8),
                     itemCount: posts.length,
                     itemBuilder: (context, index) {
-                      var post = posts[index].data() as Map<String, dynamic>? ?? {};
-                      return ConstrainedBox(
-                        constraints: BoxConstraints(minHeight: 100),
-                        child: SelectablePost(
-                          postId: post['postId'] ?? '',
-                          imageUrl: post['imageUrl'] ?? '',
-                          description: post['description'] ?? 'No description',
-                          userId: post['userId'] ?? '',
-                          userName: userProvider.username,
-                          profileImageUrl: userProvider.profileImageUrl,
-                          isPrivate: post['isPrivate'] ?? false,
-                          isSelected: _selectedPosts.contains(post['postId']),
-                          onSelect: _toggleSelect,
+                      var post =
+                          posts[index].data() as Map<String, dynamic>? ?? {};
+                      return Card(
+                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                        child: Padding(
+                          padding: EdgeInsets.all(8),
+                          child: SelectablePost(
+                            postId: post['postId'] ?? '',
+                            imageUrl: post['imageUrl'] ?? '',
+                            description: post['description'] ?? 'No description',
+                            userId: post['userId'] ?? '',
+                            userName: userProvider.username,
+                            profileImageUrl: userProvider.profileImageUrl,
+                            isPrivate: post['isPrivate'] ?? false,
+                            isSelected: _selectedPosts.contains(post['postId']),
+                            onSelect: _toggleSelect,
+                          ),
                         ),
                       );
                     },
                   )
-                : GridView.builder(
+                : MasonryGridView.count(
                     padding: EdgeInsets.all(8),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: _currentLayout == 0 ? 3 : _currentLayout == 1 ? 2 : 1,
-                      childAspectRatio: _currentLayout == 2 ? 1.5 : 0.8,
-                    ),
+                    crossAxisCount: _currentLayout == 0
+                        ? 3
+                        : _currentLayout == 1
+                            ? 2
+                            : 1,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
                     itemCount: posts.length,
                     itemBuilder: (context, index) {
-                      var post = posts[index].data() as Map<String, dynamic>? ?? {};
-                      return LayoutBuilder(
-                        builder: (context, constraints) {
-                          return ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: constraints.maxHeight,
-                              maxHeight: constraints.maxHeight,
-                            ),
-                            child: SelectablePost(
-                              postId: post['postId'] ?? '',
-                              imageUrl: post['imageUrl'] ?? '',
-                              description: post['description'] ?? 'No description',
-                              userId: post['userId'] ?? '',
-                              userName: userProvider.username,
-                              profileImageUrl: userProvider.profileImageUrl,
-                              isPrivate: post['isPrivate'] ?? false,
-                              isSelected: _selectedPosts.contains(post['postId']),
-                              onSelect: _toggleSelect,
-                            ),
-                          );
-                        },
+                      var post =
+                          posts[index].data() as Map<String, dynamic>? ?? {};
+                      return SelectablePost(
+                        postId: post['postId'] ?? '',
+                        imageUrl: post['imageUrl'] ?? '',
+                        description:
+                            post['description'] ?? 'No description',
+                        userId: post['userId'] ?? '',
+                        userName: userProvider.username,
+                        profileImageUrl: userProvider.profileImageUrl,
+                        isPrivate: post['isPrivate'] ?? false,
+                        isSelected:
+                            _selectedPosts.contains(post['postId']),
+                        onSelect: _toggleSelect,
                       );
                     },
                   ),
@@ -200,12 +214,13 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
               ),
               IconButton(
                 icon: Icon(Icons.edit, size: 30),
-                onPressed: _selectedPosts.length == 1
-                    ? _editSelectedOutfit
-                    : null,
+                onPressed:
+                    _selectedPosts.length == 1 ? _editSelectedOutfit : null,
               ),
               IconButton(
-                icon: Icon(Icons.delete, size: 30, color: _selectedPosts.isNotEmpty ? Colors.red : null),
+                icon: Icon(Icons.delete,
+                    size: 30,
+                    color: _selectedPosts.isNotEmpty ? Colors.red : null),
                 onPressed: _selectedPosts.isNotEmpty ? _confirmDelete : null,
               ),
             ],

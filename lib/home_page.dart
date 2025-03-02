@@ -47,29 +47,14 @@ class _HomePageState extends State<HomePage> {
                 return const SizedBox.shrink();
               }
 
-              return FutureBuilder<Map<String, String>>(
-                future: userProvider.getUserInfo(data['userId']),
-                builder: (context, userSnapshot) {
-                  if (userSnapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox.shrink();
-                  }
-
-                  final userInfo = userSnapshot.data ??
-                      {
-                        "username": "Unknown User",
-                        "profileImageUrl": UserProvider.defaultProfileImage,
-                      };
-
-                  return OutfitPost(
-                    postId: data['postId'],
-                    imageUrl: data['imageUrl'],
-                    description: data['description'],
-                    userId: data['userId'],
-                    userName: userInfo["username"]!,
-                    profileImageUrl: userInfo["profileImageUrl"]!,
-                    isPrivate: data['isPrivate'] ?? false,
-                  );
-                },
+              return OutfitPost(
+                postId: data['postId'],
+                imageUrl: data['imageUrl'],
+                description: data['description'],
+                userId: data['userId'],
+                userName: userProvider.username,  // ✅ Use directly
+                profileImageUrl: userProvider.profileImageUrl,  // ✅ Use directly
+                isPrivate: data['isPrivate'] ?? false,
               );
             }).toList(),
           );

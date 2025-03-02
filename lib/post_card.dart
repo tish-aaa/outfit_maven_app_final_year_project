@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/user_provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class OutfitPost extends StatefulWidget {
   final String postId;
@@ -29,6 +31,7 @@ class OutfitPost extends StatefulWidget {
 class _OutfitPostState extends State<OutfitPost> {
   bool _isPrivate = false;
   bool _isLiked = false;
+  int _likeCount = 0;
   final TextEditingController _commentController = TextEditingController();
 
   @override
@@ -36,43 +39,43 @@ class _OutfitPostState extends State<OutfitPost> {
     super.initState();
     _isPrivate = widget.isPrivate;
     _fetchLikeStatus();
+    _fetchLikeCount();
   }
 
-  void _fetchLikeStatus() async {
+  void _fetchLikeStatus() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userProvider.userId)
-        .collection('liked_posts')
+    setState(() => _isLiked = userProvider.likedPosts.contains(widget.postId));
+  }
+
+  void _fetchLikeCount() {
+    FirebaseFirestore.instance
+        .collection('outfits')
         .doc(widget.postId)
-        .get();
-    setState(() => _isLiked = doc.exists);
+        .collection('likes')
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        setState(() => _likeCount = snapshot.docs.length);
+      }
+    });
   }
 
-  void _toggleLike() async {
+  void _toggleLike() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final userRef = FirebaseFirestore.instance.collection('users').doc(userProvider.userId);
-    final likedPostRef = userRef.collection('liked_posts').doc(widget.postId);
-    
-    setState(() => _isLiked = !_isLiked);
-    if (_isLiked) {
-      await likedPostRef.set({'postId': widget.postId});
-    } else {
-      await likedPostRef.delete();
-    }
+    userProvider.toggleLike(widget.postId);
   }
 
   void _openComments() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.blue.shade200,
+      backgroundColor: Color(0xFFB3E5E1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.5, // Covers half the screen
+          height: MediaQuery.of(context).size.height * 0.5,
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -85,13 +88,20 @@ class _OutfitPostState extends State<OutfitPost> {
                       child: TextField(
                         controller: _commentController,
                         decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
                           hintText: "Write a comment...",
-                          border: OutlineInputBorder(),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF70C2BD)),
+                          ),
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.send, color: Colors.blue),
+                      icon: Icon(Icons.send, color: Color(0xFF70C2BD)),
                       onPressed: _addComment,
                     ),
                   ],
@@ -106,13 +116,16 @@ class _OutfitPostState extends State<OutfitPost> {
                       .orderBy('timestamp', descending: true)
                       .snapshots(),
                   builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (!snapshot.hasData) return CircularProgressIndicator();
+                    if (!snapshot.hasData) {
+                      return Center(child: CircularProgressIndicator());
+                    }
                     return ListView(
                       children: snapshot.data!.docs.map((doc) {
                         var data = doc.data() as Map<String, dynamic>;
                         return ListTile(
                           leading: CircleAvatar(
-                            backgroundImage: NetworkImage(data['profileImageUrl'] ?? ''),
+                            backgroundImage: CachedNetworkImageProvider(
+                                data['profileImageUrl'] ?? ''),
                           ),
                           title: Text(data['username'] ?? 'Unknown User'),
                           subtitle: Text(data['comment'] ?? ''),
@@ -149,50 +162,59 @@ class _OutfitPostState extends State<OutfitPost> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Stack(
+      color: Color(0xFFE0F2F1),
+      child: Column(
         children: [
-          Column(
-            children: [
-              FadeInImage.assetNetwork(
-                placeholder: 'assets/loading_placeholder.jpg',
-                image: widget.imageUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: 300, // 3/4 orientation
-              ),
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text(
-                  widget.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          Container(
+            color: Color(0xFFB3E5E1),
+            padding: EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundImage:
+                      CachedNetworkImageProvider(widget.profileImageUrl),
                 ),
-              ),
+                SizedBox(width: 10),
+                Text(widget.userName,
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          CachedNetworkImage(
+            imageUrl: widget.imageUrl,
+            placeholder: (context, url) => Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                  color: Colors.grey, height: 300, width: double.infinity),
+            ),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 300,
+          ),
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(widget.description,
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Text(_likeCount.toString()),
                   IconButton(
                     icon: Icon(
                         _isLiked ? Icons.favorite : Icons.favorite_border,
                         color: _isLiked ? Colors.red : Colors.grey),
                     onPressed: _toggleLike,
                   ),
-                  IconButton(
-                    icon: Icon(Icons.comment, color: Colors.blue),
-                    onPressed: _openComments,
-                  ),
                 ],
               ),
+              IconButton(
+                  icon: Icon(Icons.comment, color: Color(0xFF70C2BD)),
+                  onPressed: _openComments),
             ],
-          ),
-          Positioned(
-            top: 8,
-            left: 8,
-            child: Icon(
-              _isPrivate ? Icons.lock : Icons.lock_open,
-              color: _isPrivate ? Colors.red : Colors.white,
-              size: 24,
-            ),
           ),
         ],
       ),
