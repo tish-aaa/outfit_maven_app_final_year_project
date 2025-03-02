@@ -46,3 +46,12 @@ flutter:
     - assets/outfit_maven_logo.png
     - assets/quote.jpg
     - assets/manual.pdf
+    - assets/quiz/
+    - assets/quiz_results/
+    - assets/quiz/weather_quiz.jpeg
+    - assets/quiz/mood_quiz.jpeg
+    - assets/quiz/occasion_quiz.jpeg
+    - assets/quiz_results/energetic_playful.jpeg
+    - assets/quiz_results/calm_elegant.jpeg
+    - assets/quiz_results/edgy_moody.jpeg
+    - assets/quiz_results/cozy_minimal.jpeg

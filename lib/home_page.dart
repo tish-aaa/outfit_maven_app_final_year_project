@@ -17,11 +17,26 @@ class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late PageController _quotesController;
   List<Map<String, String>> fashionQuotes = [
-    {"quote": "A statement belt can transform any outfit.", "author": "Victoria Beckham"},
-    {"quote": "Style is a way to say who you are without having to speak.", "author": "Rachel Zoe"},
-    {"quote": "Fashion is what you buy. Style is what you do with it.", "author": "Nina Garcia"},
-    {"quote": "Clothes mean nothing until someone lives in them.", "author": "Marc Jacobs"},
-    {"quote": "In order to be irreplaceable one must always be different.", "author": "Coco Chanel"},
+    {
+      "quote": "A statement belt can transform any outfit.",
+      "author": "Victoria Beckham"
+    },
+    {
+      "quote": "Style is a way to say who you are without having to speak.",
+      "author": "Rachel Zoe"
+    },
+    {
+      "quote": "Fashion is what you buy. Style is what you do with it.",
+      "author": "Nina Garcia"
+    },
+    {
+      "quote": "Clothes mean nothing until someone lives in them.",
+      "author": "Marc Jacobs"
+    },
+    {
+      "quote": "In order to be irreplaceable one must always be different.",
+      "author": "Coco Chanel"
+    },
   ];
 
   @override
@@ -59,47 +74,72 @@ class _HomePageState extends State<HomePage> {
       endDrawer: CustomEndDrawer(),
       body: ListView(
         children: [
-          Container(
-            padding: EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: Color(0xFFE0F2F1),
-              border: Border.all(color: Color(0xFF298A90), width: 2.0),
-              borderRadius: BorderRadius.circular(80.0),
-            ),
-            margin: EdgeInsets.symmetric(vertical: 10.0),
-            height: 150.0,
-            width: 400,
-            child: PageView.builder(
-              controller: _quotesController,
-              itemCount: fashionQuotes.length,
-              itemBuilder: (context, index) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('“', style: TextStyle(color: Color(0xFF298A90), fontSize: 40.0, fontWeight: FontWeight.bold)),
-                        SizedBox(width: 5.0),
-                        Expanded(
-                          child: Text(
-                            fashionQuotes[index]["quote"]!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Color(0xFF298A90), fontSize: 20.0, fontWeight: FontWeight.bold),
+          Center(
+            child: Container(
+              padding: EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: Color(0xFFE0F2F1),
+                border: Border.all(color: Color(0xFF298A90), width: 2.0),
+                borderRadius: BorderRadius.circular(80.0),
+              ),
+              width: 320, // Set a fixed width
+              margin: EdgeInsets.symmetric(vertical: 10.0),
+              height: 150.0,
+              child: PageView.builder(
+                controller: _quotesController,
+                itemCount: fashionQuotes.length,
+                itemBuilder: (context, index) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '“',
+                            style: TextStyle(
+                              color: Color(0xFF298A90),
+                              fontSize: 40.0,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
+                          SizedBox(width: 5.0),
+                          SizedBox(
+                            width: 200, // Restrict width of the quote text
+                            child: Text(
+                              fashionQuotes[index]["quote"]!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF298A90),
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 5.0),
+                          Text(
+                            '”',
+                            style: TextStyle(
+                              color: Color(0xFF298A90),
+                              fontSize: 40.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10.0),
+                      Text(
+                        "- ${fashionQuotes[index]["author"]!}",
+                        style: TextStyle(
+                          color: Color(0xFF298A90),
+                          fontSize: 16.0,
+                          fontStyle: FontStyle.italic,
                         ),
-                        SizedBox(width: 5.0),
-                        Text('”', style: TextStyle(color: Color(0xFF298A90), fontSize: 40.0, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    SizedBox(height: 10.0),
-                    Text(
-                      fashionQuotes[index]["author"]!,
-                      style: TextStyle(color: Color(0xFF298A90), fontSize: 16.0, fontStyle: FontStyle.italic),
-                    ),
-                  ],
-                );
-              },
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
           StreamBuilder<QuerySnapshot>(
