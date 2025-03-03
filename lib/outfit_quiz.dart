@@ -4,6 +4,23 @@ import 'home_page.dart';
 import 'quiz_model.dart';
 import 'quiz_detail_page.dart';
 
+IconData _getIconFromName(String iconName) {
+  switch (iconName) {
+    case 'mood':
+      return Icons.mood;
+    case 'event':
+      return Icons.event;
+    case 'wb_sunny':
+      return Icons.wb_sunny;
+    case 'checkroom':
+      return Icons.checkroom; // If applicable
+    case 'diamond':
+      return Icons.diamond; // If applicable
+    default:
+      return Icons.style; // Default icon if not found
+  }
+}
+
 class OutfitQuizPage extends StatelessWidget {
   final Color primaryColor = Color(0xFF70C2BD); // Main theme color
   final Color accentColor = Color(0xFF1DCFCA); // Navbar color
@@ -87,7 +104,8 @@ class OutfitQuizPage extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.style, color: Colors.white, size: 34), // Stylish Icon
+                  Icon(_getIconFromName(quiz.iconName),
+                      color: Colors.white, size: 34),
                   SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -95,15 +113,17 @@ class OutfitQuizPage extends StatelessWidget {
                       children: [
                         Text(quiz.title,
                             style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 19,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white)),
                         SizedBox(height: 4),
-                        Text('Tap to start',
-                            style: TextStyle(fontSize: 14, color: Colors.white70)),
+                        Text(quiz.titleDescription,
+                            style:
+                                TextStyle(fontSize: 17, color: Colors.white)),
                       ],
                     ),
                   ),
+                  SizedBox(width: 12), // Add more space before the arrow
                   Icon(Icons.arrow_forward_ios, color: Colors.white),
                 ],
               ),

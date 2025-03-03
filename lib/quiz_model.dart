@@ -1,12 +1,16 @@
 class Quiz {
   final String title;
-  final String image; // ✅ Renamed from 'image' to 'image'
+  final String image;
+  final String iconName;
+  final String titleDescription;
   final List<Question> questions;
   final Map<String, QuizResult> results;
 
   Quiz({
     required this.title,
-    required this.image, // ✅ Uses jpeg file instead of an image
+    required this.image,
+    required this.iconName, // ✅ Uses unique iconName for each quiz
+    required this.titleDescription,
     required this.questions,
     required this.results,
   });
@@ -31,6 +35,9 @@ List<Quiz> quizzes = [
   Quiz(
     title: "Mood-Based Quiz",
     image: "assets/quiz/mood_quiz.jpeg",
+    iconName: "mood",
+    titleDescription:
+        "Not sure what to wear? Let your mood decide! Answer a few quick questions and get a style suggestion that matches your vibe. 💫👗✨",
     questions: [
       Question(
         questionText: "How are you feeling today?",
@@ -141,6 +148,9 @@ List<Quiz> quizzes = [
   Quiz(
     title: "Occasion-Based Outfit Quiz: What Should You Wear Today?",
     image: "assets/quiz/occasion_quiz.jpeg",
+    iconName: "event",
+    titleDescription:
+        "Dressing for a special occasion? We've got you covered! Answer a few quick questions and get the perfect outfit suggestion for any event. 🎉👗✨",
     questions: [
       Question(
         questionText: "What’s the occasion?",
@@ -268,6 +278,9 @@ List<Quiz> quizzes = [
   Quiz(
     title: "Weather-Based Quiz",
     image: "assets/quiz/weather_quiz.jpeg",
+    iconName: "wb_sunny",
+    titleDescription:
+        "Rain or shine, dress just right! Answer a few quick questions and get the perfect outfit suggestion for the weather. ☀️🌧️👗✨",
     questions: [
       Question(
         questionText: "What's your ideal weather?",
@@ -392,6 +405,9 @@ List<Quiz> quizzes = [
   Quiz(
     title: "Today's Outfit Quiz",
     image: "assets/quiz/todays_outfit_quiz.jpeg",
+    iconName: "checkroom",
+    titleDescription:
+        "Struggling to pick an outfit? Answer a few quick questions, and we’ll style the perfect look for today! 👗✨",
     questions: [
       Question(
         questionText: "What's your vibe for the day?",
@@ -516,6 +532,9 @@ List<Quiz> quizzes = [
   Quiz(
     title: "Accessories Quiz",
     image: "assets/quiz/accessories_quiz.jpeg",
+    iconName: "diamond",
+    titleDescription:
+        "Complete your look with the perfect accessories! Answer a few quick questions to find the best match for your style. 💎✨",
     questions: [
       Question(
         questionText: "What’s your usual go-to accessory?",
