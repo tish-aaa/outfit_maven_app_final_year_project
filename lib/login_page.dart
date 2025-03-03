@@ -67,21 +67,14 @@ class _LoginPageState extends State<LoginPage> {
           'firstName': _firstNameController.text.trim(),
           'lastName': _lastNameController.text.trim(),
           'email': _emailController.text.trim(),
-          'profileImageUrl': 'assets/defaultprofile.png', 
+          'profileImageUrl': 'assets/defaultprofile.png',
         });
-
       } else {
         userCredential = await _auth.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
         userId = userCredential.user!.uid;
-
-        // Fetch user details from Firestore
-        DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-        if (userDoc.exists) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-        }
       }
 
       if (!_isRegistering && _rememberMe) {
@@ -106,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> _recoverPassword() async {
+    Future<void> _recoverPassword() async {
     if (_emailController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Please enter your email to recover password")),
@@ -137,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
           border: OutlineInputBorder(),
           suffixIcon: isPassword
               ? IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Color(0xFF1DCFCA)),
                   onPressed: () {
                     setState(() {
                       _obscurePassword = !_obscurePassword;
@@ -148,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         validator: (value) {
           if (value!.isEmpty) return 'This field is required';
-          if (isPassword && !RegExp(r'^(?=.*\d).{6,}$').hasMatch(value)) {
+           if (isPassword && !RegExp(r'^(?=.*\d).{6,}$').hasMatch(value)) {
             return 'Password must have at least 6 characters & 1 digit';
           }
           return null;
@@ -163,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue.shade100, Colors.blue.shade400],
+            colors: [Color(0xFFECF8F8), Color(0xFF70C2BD)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -177,7 +170,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Lottie.asset('assets/login_animation.json', height: 120),
+                    Lottie.asset('assets/login_animation.json', height: 300),
                     SizedBox(height: 16),
                     if (_isRegistering) _buildTextField(_usernameController, 'Username'),
                     if (_isRegistering) _buildTextField(_firstNameController, 'First Name'),
@@ -190,6 +183,7 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           Checkbox(
                             value: _rememberMe,
+                            activeColor: Color(0xFF1DCFCA),
                             onChanged: (value) {
                               setState(() {
                                 _rememberMe = value!;
@@ -199,22 +193,26 @@ class _LoginPageState extends State<LoginPage> {
                           Text("Remember Me"),
                         ],
                       ),
-
-                    if (!_isRegistering)
+                      if (!_isRegistering)
                       TextButton(
                         onPressed: _recoverPassword,
-                        child: Text("Forgot Password?", style: TextStyle(color: Colors.white70)),
+                        child: Text("Forgot Password?", style: TextStyle(color: Colors.teal)),
                       ),
 
                     SizedBox(height: 16),
-                    _loading ? CircularProgressIndicator() : ElevatedButton(
-                      onPressed: _authenticate,
-                      child: Text(_isRegistering ? 'Register' : 'Login'),
-                    ),
-
+                    _loading
+                        ? CircularProgressIndicator()
+                        : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF1DCFCA),
+                              minimumSize: Size(double.infinity, 50),
+                            ),
+                            onPressed: _authenticate,
+                            child: Text(_isRegistering ? 'Register' : 'Login', style: TextStyle(color: Colors.white)),
+                          ),
                     TextButton(
                       onPressed: () => setState(() => _isRegistering = !_isRegistering),
-                      child: Text(_isRegistering ? 'Already have an account? Login' : 'Don’t have an account? Register'),
+                      child: Text(_isRegistering ? 'Already have an account? Login' : 'Don’t have an account? Register', style: TextStyle(color: Colors.teal)),
                     ),
                   ],
                 ),
