@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
+
 import 'post_card.dart';
 import 'navbar.dart';
 import 'providers/user_provider.dart';
-import 'dart:async';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,7 +17,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late PageController _quotesController;
-  List<Map<String, String>> fashionQuotes = [
+  late Timer _quoteTimer;
+
+  final List<Map<String, String>> fashionQuotes = [
     {
       "quote": "A statement belt can transform any outfit.",
       "author": "Victoria Beckham"
@@ -47,18 +50,24 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _startQuoteScroll() {
-    Timer.periodic(Duration(seconds: 5), (timer) {
+    _quoteTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (_quotesController.hasClients) {
-        _quotesController.nextPage(
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
+        int nextPage = _quotesController.page!.toInt() + 1;
+        if (nextPage >= fashionQuotes.length) {
+          _quotesController.jumpToPage(0);
+        } else {
+          _quotesController.nextPage(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
       }
     });
   }
 
   @override
   void dispose() {
+    _quoteTimer.cancel();
     _quotesController.dispose();
     super.dispose();
   }
@@ -74,16 +83,23 @@ class _HomePageState extends State<HomePage> {
       endDrawer: CustomEndDrawer(),
       body: ListView(
         children: [
+          // Fashion Quotes Section
           Center(
             child: Container(
-              padding: EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(20.0),
               decoration: BoxDecoration(
-                color: Color(0xFFE0F2F1),
-                border: Border.all(color: Color(0xFF298A90), width: 2.0),
-                borderRadius: BorderRadius.circular(80.0),
+                color: Colors.blue.shade100, // Matches your theme
+                border: Border.all(color: const Color(0xFF298A90), width: 2.0),
+                borderRadius: BorderRadius.circular(20.0),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      blurRadius: 5.0,
+                      spreadRadius: 2.0),
+                ],
               ),
-              width: 320, // Set a fixed width
-              margin: EdgeInsets.symmetric(vertical: 10.0),
+              width: 320,
+              margin: const EdgeInsets.symmetric(vertical: 10.0),
               height: 150.0,
               child: PageView.builder(
                 controller: _quotesController,
@@ -95,7 +111,7 @@ class _HomePageState extends State<HomePage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
+                          const Text(
                             '“',
                             style: TextStyle(
                               color: Color(0xFF298A90),
@@ -103,21 +119,21 @@ class _HomePageState extends State<HomePage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(width: 5.0),
+                          const SizedBox(width: 5.0),
                           SizedBox(
-                            width: 200, // Restrict width of the quote text
+                            width: 200,
                             child: Text(
                               fashionQuotes[index]["quote"]!,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Color(0xFF298A90),
                                 fontSize: 18.0,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
-                          SizedBox(width: 5.0),
-                          Text(
+                          const SizedBox(width: 5.0),
+                          const Text(
                             '”',
                             style: TextStyle(
                               color: Color(0xFF298A90),
@@ -127,10 +143,10 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 10.0),
+                      const SizedBox(height: 10.0),
                       Text(
                         "- ${fashionQuotes[index]["author"]!}",
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color(0xFF298A90),
                           fontSize: 16.0,
                           fontStyle: FontStyle.italic,
@@ -142,6 +158,8 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+
+          // Outfit Posts Section
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('outfits')
@@ -168,19 +186,36 @@ class _HomePageState extends State<HomePage> {
                     return const SizedBox.shrink();
                   }
 
-                  return OutfitPost(
-                    postId: data['postId'],
-                    imageUrl: data['imageUrl'],
-                    description: data['description'],
-                    userId: data['userId'],
-                    userName: userProvider.username,
-                    profileImageUrl: userProvider.profileImageUrl,
-                    isPrivate: data['isPrivate'] ?? false,
+                  return FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(data['userId'])
+                        .get(),
+                    builder: (context, userSnapshot) {
+                      if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+                        return const SizedBox
+                            .shrink(); // Skip post if user data is missing
+                      }
+
+                      final userData =
+                          userSnapshot.data!.data() as Map<String, dynamic>?;
+
+                      return OutfitPost(
+                        postId: data['postId'],
+                        imageUrl: data['imageUrl'],
+                        description: data['description'],
+                        userId: data['userId'],
+                        userName: userData?['username'] ?? "Unknown User",
+                        profileImageUrl: userData?['profileImageUrl'] ??
+                            "assets/defaultprofile.jpg",
+                        isPrivate: data['isPrivate'] ?? false,
+                      );
+                    },
                   );
                 }).toList(),
               );
             },
-          ),
+          )
         ],
       ),
     );

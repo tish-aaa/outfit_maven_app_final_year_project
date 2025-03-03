@@ -18,9 +18,6 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    String userId = userProvider.userId;
-
-    // Fetch liked posts from the user provider
     final likedPosts = userProvider.likedPosts;
 
     if (likedPosts.isEmpty) {
@@ -44,25 +41,30 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
           final postId = likedPosts.elementAt(index);
 
           return StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('outfits') // Fetching the actual outfit data
-                .doc(postId) // Get outfit by postId
-                .snapshots(),
+            stream: FirebaseFirestore.instance.collection('outfits').doc(postId).snapshots(),
             builder: (context, postSnapshot) {
               if (!postSnapshot.hasData || !postSnapshot.data!.exists) {
-                return const SizedBox.shrink(); // If post does not exist, show empty
+                return const SizedBox.shrink();
               }
 
               final postData = postSnapshot.data!.data() as Map<String, dynamic>;
+              final String userId = postData['userId'] ?? "";
 
-              return OutfitPost(
-                postId: postData['postId'],
-                imageUrl: postData['imageUrl'],
-                description: postData['description'],
-                userId: postData['userId'],
-                userName: postData['userName'] ?? "Unknown", // Use a default name if not present
-                profileImageUrl: postData['profileImageUrl'] ?? UserProvider.defaultProfileImage, // Use default profile image if not present
-                isPrivate: postData['isPrivate'] ?? false, // Check if post is private
+              return StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
+                builder: (context, userSnapshot) {
+                  final userData = userSnapshot.data?.data() as Map<String, dynamic>?;
+
+                  return OutfitPost(
+                    postId: postData['postId'],
+                    imageUrl: postData['imageUrl'],
+                    description: postData['description'],
+                    userId: postData['userId'],
+                    userName: userData?['username'] ?? "Unknown",
+                    profileImageUrl: userData?['profileImageUrl'] ?? UserProvider.defaultProfileImage,
+                    isPrivate: postData['isPrivate'] ?? false,
+                  );
+                },
               );
             },
           );
