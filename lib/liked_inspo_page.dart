@@ -30,7 +30,8 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
           : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('outfits')
-                  .where(FieldPath.documentId, whereIn: likedPosts.isNotEmpty ? likedPosts : ['dummy'])
+                  .where(FieldPath.documentId,
+                      whereIn: likedPosts.isNotEmpty ? likedPosts : ['dummy'])
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -44,18 +45,22 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
                   children: snapshot.data!.docs.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
 
-                    if (data['isPrivate'] ?? false) return const SizedBox.shrink();
+                    if (data['isPrivate'] ?? false)
+                      return const SizedBox.shrink();
 
                     return OutfitPost(
-                      postId: data['postId'],
-                      imageUrl: data['imageUrl'],
-                      description: data['description'],
-                      userId: data['userId'],
-                      userName: data['userName'],
-                      profileImageUrl: data['profileImageUrl'] ?? UserProvider.defaultProfileImage,
-                      isPrivate: data['isPrivate'],
-                      isSelling: data['isSelling'] ?? false,
-                      price: data['price'] ?? 0.0,
+                      postId: data['postId'] ?? '', // Default to empty string
+                      imageUrl: data['imageUrl'] ?? '', // Prevent null errors
+                      description:
+                          data['description'] ?? '', // Default to empty string
+                      userId: data['userId'] ?? '', // Default to empty string
+                      userName: data['userName'] ?? 'Unknown', // Fallback name
+                      profileImageUrl:
+                          data['profileImageUrl'] ?? '', // Prevent null errors
+                      isPrivate: data['isPrivate'] ?? false, // Default to false
+                      forSale: data['forSale'] ?? false, // Default to false
+                      price: (data['price'] ?? 0.0)
+                          .toDouble(), // Ensure numeric type
                     );
                   }).toList(),
                 );

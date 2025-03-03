@@ -95,9 +95,11 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
     final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Outfits'),
+        backgroundColor: const Color(0xFF70C2BD),
+        title: Text('My Outfits',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
@@ -162,11 +164,12 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                                 post['description'] ?? 'No description',
                             userId: post['userId'] ?? '',
                             userName: userProvider.username,
+                            title: post['title'] ?? 'Untitled',
                             profileImageUrl: userProvider.profileImageUrl,
                             isPrivate: post['isPrivate'] ?? false,
                             isSelected: _selectedPosts.contains(post['postId']),
                             onSelect: _toggleSelect,
-                            isSelling: post['isSelling'] ?? false, // Added
+                            forSale: post['forSale'] ?? false, // Added
                             price: (post['price'] ?? 0).toDouble(), // Added
                           ),
                         ),
@@ -192,11 +195,12 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                         description: post['description'] ?? 'No description',
                         userId: post['userId'] ?? '',
                         userName: userProvider.username,
+                        title: post['title'] ?? 'Untitled',
                         profileImageUrl: userProvider.profileImageUrl,
                         isPrivate: post['isPrivate'] ?? false,
                         isSelected: _selectedPosts.contains(post['postId']),
                         onSelect: _toggleSelect,
-                        isSelling: post['isSelling'] ?? false, // Added
+                        forSale: post['forSale'] ?? false, // Added
                         price: (post['price'] ?? 0).toDouble(), // Added
                       );
                     },

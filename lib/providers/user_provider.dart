@@ -120,18 +120,18 @@ class UserProvider with ChangeNotifier {
 
       if (postSnapshot.exists) {
         final data = postSnapshot.data() as Map<String, dynamic>;
-        bool isCurrentlySelling = data['isSelling'] ?? false;
+        bool isCurrentlySelling = data['forSale'] ?? false;
 
         if (isCurrentlySelling) {
           // Prevent removing from selling as per your requirement
           print("This outfit is already marked for sale and cannot be undone.");
         } else {
           await postRef.update({
-            'isSelling': true,
+            'forSale': true,
             'price': price,
           });
 
-          _postDetails[postId]?['isSelling'] = true;
+          _postDetails[postId]?['forSale'] = true;
           _postDetails[postId]?['price'] = price;
           notifyListeners();
         }
@@ -149,18 +149,19 @@ class UserProvider with ChangeNotifier {
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final postId = doc.id;
-        final bool newIsSelling = data['isSelling'] ?? false;
-        if (newIsSelling) {
-          data['isPrivate'] = false; // Ensure selling posts aren't private
-        }
-
+        final String imageUrl = data['imageUrl'] ?? '';
+        final String description =
+            data['description'] ?? 'No description available';
+        final bool newForSale = data['forSale'] ?? false; // Corrected field
         final double newPrice = (data['price'] ?? 0).toDouble();
         final bool newIsPrivate = data['isPrivate'] ?? false;
 
         _postDetails[postId] = {
-          'isSelling': newIsSelling,
-          'price': newPrice,
-          'isPrivate': newIsPrivate,
+          'imageUrl': imageUrl ?? '', // Prevent null errors
+          'description': description ?? 'Outfit', // Default to empty string
+          'forSale': newForSale ?? false, // Default to false if null
+          'price': newPrice ?? 0, // Default to 0 if price is missing
+          'isPrivate': newIsPrivate ?? false, // Default to false
         };
       }
       notifyListeners();
@@ -205,6 +206,63 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  Future<void> addToCart(
+      String postId, double? price, String imageUrl, String description) async {
+    if (_userId.isEmpty) return; // Ensure user is logged in
+
+    if (price == null) {
+      print("Error: Cannot add item with null price");
+      return;
+    }
+
+    final cartRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_userId)
+        .collection('cart')
+        .doc(postId); // Keep the same postId to track quantity
+
+    try {
+      final docSnapshot = await cartRef.get();
+
+      if (docSnapshot.exists) {
+        // If item already exists, increase quantity
+        await cartRef.update({
+          'quantity': FieldValue.increment(1),
+        });
+
+        // Update local state
+        final index = _cartItems.indexWhere((item) => item['postId'] == postId);
+        if (index != -1) {
+          _cartItems[index]['quantity'] =
+              (_cartItems[index]['quantity'] as int) + 1;
+        }
+      } else {
+        // If item does not exist, add with quantity = 1
+        await cartRef.set({
+          'postId': postId,
+          'price': price ?? 0.0, // ✅ Convert price to double
+          'imageUrl': imageUrl,
+          'description': description,
+          'quantity': 1, // ✅ Ensure quantity is int
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        // Update local state
+        _cartItems.add({
+          'postId': postId,
+          'price': price,
+          'imageUrl': imageUrl,
+          'description': description,
+          'quantity': 1,
+        });
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print("Error adding to cart: $e");
+    }
+  }
+
   void _listenToCartChanges() {
     FirebaseFirestore.instance
         .collection('users')
@@ -213,19 +271,21 @@ class UserProvider with ChangeNotifier {
         .snapshots()
         .listen((snapshot) async {
       List<Map<String, dynamic>> newCartItems = [];
-
       Map<String, Map<String, dynamic>> newCartDetails = {};
 
       for (var doc in snapshot.docs) {
         final postId = doc.id;
-        final data = doc.data()
-            as Map<String, dynamic>; // Ensure data is retrieved properly
+        final data = doc.data();
 
         newCartItems.add({
           'postId': postId,
-          'price': data['price'] ?? 0.0,
+          'price': (data['price'] is num)
+              ? (data['price'] as num).toDouble()
+              : 0.0, // ✅ Ensures double
           'imageUrl': data['imageUrl'] ?? '',
-          'title': data['title'] ?? 'Unknown Item',
+          'description': data['description'] ?? 'Unknown Item',
+          'quantity': (data['quantity'] as num?)?.toInt() ??
+              1, // ✅ Ensure quantity is int
         });
 
         // Fetch outfit details
@@ -239,17 +299,87 @@ class UserProvider with ChangeNotifier {
         }
       }
 
-      if (_cartItems != newCartItems) {
-        _cartItems = newCartItems;
-        _cartDetails = newCartDetails;
-        notifyListeners();
-      }
+      _cartItems = newCartItems;
+      _cartDetails = newCartDetails;
+      notifyListeners();
     });
   }
 
-  void removeFromCart(String postId) {
-    _cartItems.removeWhere((item) => item['postId'] == postId);
-    notifyListeners();
+  Future<void> updateCartItem(String postId, bool addToCart,
+      {double? price, String? imageUrl, String? description}) async {
+    if (_userId.isEmpty) return; // Ensure user is logged in
+
+    final cartRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_userId)
+        .collection('cart')
+        .doc(postId);
+
+    try {
+      if (addToCart) {
+        // Add item to cart
+        await cartRef.set({
+          'postId': postId,
+          'price': price ?? 0.0,
+          'imageUrl': imageUrl ?? '',
+          'description': description ?? 'No description available',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        _cartItems.add({
+          'postId': postId,
+          'price': price,
+          'imageUrl': imageUrl,
+          'description': description,
+        });
+      } else {
+        // Remove item from cart
+        await cartRef.delete();
+        _cartItems.removeWhere((item) => item['postId'] == postId);
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print("Error updating cart: $e");
+    }
+  }
+
+  Future<void> removeFromCart(String postId) async {
+    final cartRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_userId)
+        .collection('cart')
+        .doc(postId);
+
+    try {
+      // Get current item data
+      final docSnapshot = await cartRef.get();
+
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data() as Map<String, dynamic>;
+        int currentQuantity = data['quantity'] ?? 1;
+
+        if (currentQuantity > 1) {
+          // Decrease quantity if more than 1
+          await cartRef.update({'quantity': FieldValue.increment(-1)});
+
+          // Update local state
+          final index =
+              _cartItems.indexWhere((item) => item['postId'] == postId);
+          if (index != -1) {
+            _cartItems[index]['quantity'] = currentQuantity - 1;
+          }
+        } else {
+          // Remove item completely if quantity is 1
+          await cartRef.delete();
+          _cartItems.removeWhere((item) => item['postId'] == postId);
+        }
+
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Error removing from cart: $e");
+    }
   }
 
   List<Map<String, dynamic>> get orderDetails => _cartItems.map((item) {
@@ -257,7 +387,7 @@ class UserProvider with ChangeNotifier {
           'postId': item['postId'],
           'price': item['price'],
           'imageUrl': item['imageUrl'],
-          'title': item['title'],
+          'description': item['description'],
           'timestamp': FieldValue.serverTimestamp(),
         };
       }).toList();
@@ -361,7 +491,7 @@ class UserProvider with ChangeNotifier {
         'addedAt': FieldValue.serverTimestamp(),
         'price': item['price'],
         'imageUrl': item['imageUrl'],
-        'title': item['title'],
+        'description': item['description'],
       });
 
       _cartItems.add(item);

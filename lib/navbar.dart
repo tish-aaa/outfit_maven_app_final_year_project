@@ -36,7 +36,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           title: Center(
             child: Image.asset(
-              'assets/logo.png',
+              'assets/outfit_maven_logo.png',
               height: 50,
             ),
           ),
@@ -239,7 +239,7 @@ class CustomEndDrawer extends StatelessWidget {
               const Spacer(),
               Image.asset(
                 'assets/outfit_maven_logo.png',
-                width: double.infinity,
+                width: 200,
                 fit: BoxFit.cover,
               ),
             ],

@@ -22,11 +22,26 @@ class _HomePageState extends State<HomePage> {
   int cartItemCount = 0;
 
   final List<Map<String, String>> fashionQuotes = [
-    {"quote": "A statement belt can transform any outfit.", "author": "Victoria Beckham"},
-    {"quote": "Style is a way to say who you are without having to speak.", "author": "Rachel Zoe"},
-    {"quote": "Fashion is what you buy. Style is what you do with it.", "author": "Nina Garcia"},
-    {"quote": "Clothes mean nothing until someone lives in them.", "author": "Marc Jacobs"},
-    {"quote": "In order to be irreplaceable one must always be different.", "author": "Coco Chanel"},
+    {
+      "quote": "A statement belt can transform any outfit.",
+      "author": "Victoria Beckham"
+    },
+    {
+      "quote": "Style is a way to say who you are without having to speak.",
+      "author": "Rachel Zoe"
+    },
+    {
+      "quote": "Fashion is what you buy. Style is what you do with it.",
+      "author": "Nina Garcia"
+    },
+    {
+      "quote": "Clothes mean nothing until someone lives in them.",
+      "author": "Marc Jacobs"
+    },
+    {
+      "quote": "In order to be irreplaceable one must always be different.",
+      "author": "Coco Chanel"
+    },
   ];
 
   @override
@@ -54,7 +69,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _fetchCartCount() {
-    FirebaseFirestore.instance.collection('cart').snapshots().listen((snapshot) {
+    FirebaseFirestore.instance
+        .collection('cart')
+        .snapshots()
+        .listen((snapshot) {
       setState(() {
         cartItemCount = snapshot.docs.length;
       });
@@ -86,7 +104,8 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.all(20.0),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade100,
-                    border: Border.all(color: const Color(0xFF298A90), width: 2.0),
+                    border:
+                        Border.all(color: const Color(0xFF298A90), width: 2.0),
                     borderRadius: BorderRadius.circular(20.0),
                     boxShadow: [
                       BoxShadow(
@@ -105,11 +124,13 @@ class _HomePageState extends State<HomePage> {
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("\"${fashionQuotes[index]['quote']}\"", 
-                              style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold)),
+                          Text("\"${fashionQuotes[index]['quote']}\"",
+                              style: const TextStyle(
+                                  fontSize: 18.0, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 10.0),
-                          Text("- ${fashionQuotes[index]['author']}", 
-                              style: const TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
+                          Text("- ${fashionQuotes[index]['author']}",
+                              style: const TextStyle(
+                                  fontSize: 16.0, fontStyle: FontStyle.italic)),
                         ],
                       );
                     },
@@ -117,7 +138,10 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('outfits').where('isPrivate', isEqualTo: false).snapshots(),
+                stream: FirebaseFirestore.instance
+                    .collection('outfits')
+                    .where('isPrivate', isEqualTo: false)
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -129,15 +153,18 @@ class _HomePageState extends State<HomePage> {
                     children: snapshot.data!.docs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
                       return OutfitPost(
-                        postId: data['postId'],
-                        imageUrl: data['imageUrl'],
-                        description: data['description'],
-                        userId: data['userId'],
-                        userName: data['userName'],
-                        profileImageUrl: data['profileImageUrl'],
-                        isPrivate: data['isPrivate'],
-                        isSelling: data['isSelling'] ?? false,
-                        price: data['price'] ?? 0.0, 
+                        postId: data['postId'] ?? '',
+                        imageUrl: data['imageUrl'] ?? '',
+                        description: data['description'] ?? '',
+                        userId: data['userId'] ?? '',
+                        userName: data['userName'] ?? 'Unknown',
+                        profileImageUrl: data['profileImageUrl'] ?? '',
+                        isPrivate: data['isPrivate'] ?? false,
+                        forSale: data['forSale'] ??
+                            data['forSale'] ??
+                            false, // ✅ Ensure correct field
+                        price: (data['price'] ?? 0.0)
+                            .toDouble(), // ✅ Ensure numeric type
                       );
                     }).toList(),
                   );
@@ -169,7 +196,8 @@ class _HomePageState extends State<HomePage> {
               backgroundColor: const Color(0xFF70C2BD),
               child: Stack(
                 children: [
-                  const Icon(Icons.shopping_cart, size: 30, color: Colors.white),
+                  const Icon(Icons.shopping_cart,
+                      size: 30, color: Colors.white),
                   if (cartItemCount > 0)
                     Positioned(
                       right: 0,

@@ -15,11 +15,13 @@ class OutfitPage extends StatefulWidget {
 
 class _OutfitPageState extends State<OutfitPage> {
   final TextEditingController _descriptionController = TextEditingController();
-  bool _isPrivate = false;
-  bool _wasPrivate = false;
+  final TextEditingController _priceController = TextEditingController();
+  bool _isPrivate = true;
+  bool _wasPrivate = true;
   bool _isLoading = false;
   String? _imageUrl;
-  bool _showWarning = false;
+  bool _forSale = false;
+  bool _wasForSale = false;
 
   @override
   void initState() {
@@ -36,12 +38,16 @@ class _OutfitPageState extends State<OutfitPage> {
         .get();
     if (postDoc.exists) {
       var data = postDoc.data() as Map<String, dynamic>;
-
       setState(() {
         _descriptionController.text = data['description'] ?? '';
-        _isPrivate = data['isPrivate'] ?? false;
+        _isPrivate = data['isPrivate'] ?? true;
         _wasPrivate = _isPrivate;
         _imageUrl = data['imageUrl'] ?? '';
+        _forSale = data['forSale'] ?? false;
+        _wasForSale = _forSale;
+        if (_forSale) {
+          _priceController.text = data['price']?.toString() ?? '';
+        }
       });
     }
   }
@@ -70,6 +76,12 @@ class _OutfitPageState extends State<OutfitPage> {
       );
       return;
     }
+    if (_forSale && _priceController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter a price for the outfit")),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -87,107 +99,115 @@ class _OutfitPageState extends State<OutfitPage> {
       'userName': username,
       'profileImageUrl': profileImageUrl,
       'isPrivate': _isPrivate,
+      'forSale': _forSale,
     };
 
-    await FirebaseFirestore.instance
-        .collection('outfits')
-        .doc(postId)
-        .set(postData);
+    if (_forSale) {
+      postData['price'] = double.parse(_priceController.text.trim());
+    }
 
+    await FirebaseFirestore.instance.collection('outfits').doc(postId).set(postData);
     setState(() => _isLoading = false);
     Navigator.pop(context);
-  }
-
-  void _confirmDelete() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Delete Outfit"),
-        content: Text("Are you sure you want to delete this outfit?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              await FirebaseFirestore.instance
-                  .collection('outfits')
-                  .doc(widget.postId)
-                  .delete();
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handlePrivacyToggle(bool newValue) {
-    if (!_wasPrivate) {
-      setState(() {
-        _isPrivate = newValue;
-        _showWarning = newValue;
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.postId == null ? "Add Outfit" : "Edit Outfit"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            onTap: _pickImage,
-            child: _imageUrl == null
-                ? Container(
-                    height: 150,
-                    width: double.infinity,
-                    color: Colors.grey[300],
-                    child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
-                  )
-                : Image.network(_imageUrl!, height: 150),
-          ),
-          TextField(
-            controller: _descriptionController,
-            decoration: InputDecoration(labelText: "Description"),
-            maxLength: 40,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Make Private"),
-              Switch(
-                value: _isPrivate,
-                onChanged: _wasPrivate ? null : _handlePrivacyToggle,
-                activeColor: Colors.red,
-              ),
-            ],
-          ),
-          if (_showWarning)
-            Padding(
-              padding: const EdgeInsets.only(top: 5.0),
-              child: Text(
-                "Once private, this outfit cannot be made public again.",
-                style: TextStyle(color: Colors.red, fontSize: 12),
-              ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: _pickImage,
+              child: _imageUrl == null
+                  ? Container(
+                      height: 150,
+                      width: double.infinity,
+                      color: Colors.grey[300],
+                      child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
+                    )
+                  : Image.network(_imageUrl!, height: 150),
             ),
-        ],
+            TextField(
+              controller: _descriptionController,
+              decoration: InputDecoration(labelText: "Description"),
+              maxLength: 40,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Make Private"),
+                Switch(
+                  value: _isPrivate,
+                  onChanged: (_forSale) ? null : (newValue) {
+                    setState(() {
+                      _isPrivate = newValue;
+                    });
+                  },
+                  activeColor: Colors.red,
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("For Sale"),
+                Switch(
+                  value: _forSale,
+                  onChanged: (_wasForSale || _isPrivate)
+                      ? null
+                      : (newValue) {
+                          if (newValue) {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text("Confirm Sale"),
+                                content: Text("Once an outfit is marked for sale, it cannot be made private again."),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text("Cancel"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _forSale = true;
+                                        _isPrivate = false;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text("Confirm"),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else {
+                            setState(() {
+                              _forSale = false;
+                              _priceController.clear();
+                            });
+                          }
+                        },
+                  activeColor: Colors.green,
+                ),
+              ],
+            ),
+            if (_forSale)
+              TextField(
+                controller: _priceController,
+                decoration: InputDecoration(labelText: "Price"),
+                keyboardType: TextInputType.number,
+              ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text("Cancel"),
         ),
-        if (widget.postId != null)
-          TextButton(
-            onPressed: _confirmDelete,
-            child: Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
         TextButton(
           onPressed: _saveOutfit,
           child: _isLoading ? CircularProgressIndicator() : Text("Save"),

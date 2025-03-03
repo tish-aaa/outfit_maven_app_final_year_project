@@ -10,9 +10,11 @@ class OutfitPost extends StatefulWidget {
   final String userId;
   final String imageUrl;
   final String description;
-  final String userName; // Original creator's username
-  final String profileImageUrl; // Original creator's profile image URL
+  final String userName;
+  final String profileImageUrl;
   final bool isPrivate;
+  final bool forSale;
+  final double? price;
 
   const OutfitPost({
     required this.postId,
@@ -22,6 +24,8 @@ class OutfitPost extends StatefulWidget {
     required this.userName,
     required this.profileImageUrl,
     required this.isPrivate,
+    required this.forSale,
+    this.price,
   });
 
   @override
@@ -32,14 +36,18 @@ class _OutfitPostState extends State<OutfitPost> {
   bool _isPrivate = false;
   bool _isLiked = false;
   int _likeCount = 0;
+  int _cartCount = 0;
+  double? _price;
   final TextEditingController _commentController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _isPrivate = widget.isPrivate;
+    _price = widget.price;
     _fetchLikeCount();
     _fetchLikeStatus();
+    _listenForPriceUpdates();
   }
 
   void _fetchLikeStatus() {
@@ -60,6 +68,22 @@ class _OutfitPostState extends State<OutfitPost> {
         setState(() => _likeCount = snapshot.docs.length);
       }
     });
+  }
+
+  void _listenForPriceUpdates() {
+    if (widget.forSale) {
+      FirebaseFirestore.instance
+          .collection('outfits')
+          .doc(widget.postId)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.exists && mounted) {
+          setState(() {
+            _price = snapshot.data()?['price'];
+          });
+        }
+      });
+    }
   }
 
   void _toggleLike() {
@@ -129,13 +153,15 @@ class _OutfitPostState extends State<OutfitPost> {
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundImage: CachedNetworkImageProvider(
-                                data['profileImageUrl'] ?? 'assets/defaultprofile.png'),
+                                data['profileImageUrl'] ??
+                                    'assets/defaultprofile.png'),
                           ),
                           title: Text(
                             data['username'] ?? 'Unknown User',
                             style: TextStyle(
                               color: Color(0xFF298A90),
-                              fontWeight: FontWeight.bold, // Make username bolder
+                              fontWeight:
+                                  FontWeight.bold, // Make username bolder
                             ),
                           ),
                           subtitle: Text(
@@ -172,6 +198,20 @@ class _OutfitPostState extends State<OutfitPost> {
     _commentController.clear();
   }
 
+  void _addToCart() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    userProvider.addToCart(
+        widget.postId, // Post ID
+        widget.price, // Price (ensure it's a double)
+        widget.imageUrl, // Image URL
+        widget.description // description
+        );
+
+    setState(() {
+      _cartCount++;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -187,12 +227,15 @@ class _OutfitPostState extends State<OutfitPost> {
                   backgroundImage: CachedNetworkImageProvider(
                     widget.profileImageUrl.isNotEmpty
                         ? widget.profileImageUrl
-                        : 'assets/defaultprofile.png', // Use default if empty
+                        : 'assets/defaultprofile.png',
                   ),
                 ),
                 SizedBox(width: 10),
                 Text(widget.userName,
                     style: TextStyle(fontWeight: FontWeight.bold)),
+                Spacer(),
+                if (widget.isPrivate)
+                  Icon(Icons.lock, color: Colors.red, size: 20),
               ],
             ),
           ),
@@ -219,19 +262,19 @@ class _OutfitPostState extends State<OutfitPost> {
               Row(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(left: 11.0), // Add space before like count
+                    padding: const EdgeInsets.only(left: 11.0),
                     child: Text(
                       _likeCount.toString(),
                       style: TextStyle(
-                        color: Color(0xFF298A90), // Same color as comment box
-                        fontWeight: FontWeight.bold, // Make like count bold
+                        color: Color(0xFF298A90),
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                   IconButton(
                     icon: Icon(
                       _isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: _isLiked ? Color(0xFF298A90) : Color(0xFF298A90), // Change color to #19a99f when liked
+                      color: Color(0xFF298A90),
                     ),
                     onPressed: _toggleLike,
                   ),
@@ -242,9 +285,32 @@ class _OutfitPostState extends State<OutfitPost> {
                   onPressed: _openComments),
             ],
           ),
+          if (widget.forSale)
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 5.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Display the price in bold with the same color as the likes count
+                  Text(
+                    "₹${_price?.toStringAsFixed(2) ?? "-"}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF298A90), // Same color as likes count
+                      fontSize: 16,
+                    ),
+                  ),
+                  // Display the cart icon
+                  IconButton(
+                    icon: Icon(Icons.shopping_cart, color: Color(0xFF19A99F)),
+                    onPressed: _addToCart,
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
 }
-
