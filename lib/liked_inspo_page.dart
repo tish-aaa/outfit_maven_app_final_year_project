@@ -20,56 +20,47 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
     final userProvider = Provider.of<UserProvider>(context);
     final likedPosts = userProvider.likedPosts;
 
-    if (likedPosts.isEmpty) {
-      return Scaffold(
-        key: _scaffoldKey,
-        appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
-        drawer: CustomDrawer(),
-        endDrawer: CustomEndDrawer(),
-        body: const Center(child: Text("No liked posts yet.")),
-      );
-    }
-
     return Scaffold(
       key: _scaffoldKey,
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
       drawer: CustomDrawer(),
       endDrawer: CustomEndDrawer(),
-      body: ListView.builder(
-        itemCount: likedPosts.length,
-        itemBuilder: (context, index) {
-          final postId = likedPosts.elementAt(index);
+      body: likedPosts.isEmpty
+          ? const Center(child: Text("No liked posts yet."))
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('outfits')
+                  .where(FieldPath.documentId, whereIn: likedPosts.isNotEmpty ? likedPosts : ['dummy'])
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("No liked posts available."));
+                }
 
-          return StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance.collection('outfits').doc(postId).snapshots(),
-            builder: (context, postSnapshot) {
-              if (!postSnapshot.hasData || !postSnapshot.data!.exists) {
-                return const SizedBox.shrink();
-              }
+                return ListView(
+                  children: snapshot.data!.docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
 
-              final postData = postSnapshot.data!.data() as Map<String, dynamic>;
-              final String userId = postData['userId'] ?? "";
+                    if (data['isPrivate'] ?? false) return const SizedBox.shrink();
 
-              return StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
-                builder: (context, userSnapshot) {
-                  final userData = userSnapshot.data?.data() as Map<String, dynamic>?;
-
-                  return OutfitPost(
-                    postId: postData['postId'],
-                    imageUrl: postData['imageUrl'],
-                    description: postData['description'],
-                    userId: postData['userId'],
-                    userName: userData?['username'] ?? "Unknown",
-                    profileImageUrl: userData?['profileImageUrl'] ?? UserProvider.defaultProfileImage,
-                    isPrivate: postData['isPrivate'] ?? false,
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
+                    return OutfitPost(
+                      postId: data['postId'],
+                      imageUrl: data['imageUrl'],
+                      description: data['description'],
+                      userId: data['userId'],
+                      userName: data['userName'],
+                      profileImageUrl: data['profileImageUrl'] ?? UserProvider.defaultProfileImage,
+                      isPrivate: data['isPrivate'],
+                      isSelling: data['isSelling'] ?? false,
+                      price: data['price'] ?? 0.0,
+                    );
+                  }).toList(),
+                );
+              },
+            ),
     );
   }
 }

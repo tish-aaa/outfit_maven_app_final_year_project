@@ -147,7 +147,8 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                       var post =
                           posts[index].data() as Map<String, dynamic>? ?? {};
                       return Card(
-                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        margin:
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -157,13 +158,16 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                           child: SelectablePost(
                             postId: post['postId'] ?? '',
                             imageUrl: post['imageUrl'] ?? '',
-                            description: post['description'] ?? 'No description',
+                            description:
+                                post['description'] ?? 'No description',
                             userId: post['userId'] ?? '',
                             userName: userProvider.username,
                             profileImageUrl: userProvider.profileImageUrl,
                             isPrivate: post['isPrivate'] ?? false,
                             isSelected: _selectedPosts.contains(post['postId']),
                             onSelect: _toggleSelect,
+                            isSelling: post['isSelling'] ?? false, // Added
+                            price: (post['price'] ?? 0).toDouble(), // Added
                           ),
                         ),
                       );
@@ -185,15 +189,15 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                       return SelectablePost(
                         postId: post['postId'] ?? '',
                         imageUrl: post['imageUrl'] ?? '',
-                        description:
-                            post['description'] ?? 'No description',
+                        description: post['description'] ?? 'No description',
                         userId: post['userId'] ?? '',
                         userName: userProvider.username,
                         profileImageUrl: userProvider.profileImageUrl,
                         isPrivate: post['isPrivate'] ?? false,
-                        isSelected:
-                            _selectedPosts.contains(post['postId']),
+                        isSelected: _selectedPosts.contains(post['postId']),
                         onSelect: _toggleSelect,
+                        isSelling: post['isSelling'] ?? false, // Added
+                        price: (post['price'] ?? 0).toDouble(), // Added
                       );
                     },
                   ),

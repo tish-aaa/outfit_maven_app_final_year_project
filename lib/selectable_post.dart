@@ -10,6 +10,8 @@ class SelectablePost extends StatelessWidget {
   final String profileImageUrl;
   final bool isPrivate;
   final bool isSelected;
+  final bool isSelling;
+  final double? price;
   final Function(String) onSelect;
 
   const SelectablePost({
@@ -21,6 +23,8 @@ class SelectablePost extends StatelessWidget {
     required this.profileImageUrl,
     required this.isPrivate,
     required this.isSelected,
+    required this.isSelling,
+    this.price,
     required this.onSelect,
     Key? key,
   }) : super(key: key);
@@ -40,6 +44,8 @@ class SelectablePost extends StatelessWidget {
             userName: userName,
             profileImageUrl: profileImageUrl,
             isPrivate: isPrivate,
+            isSelling: isSelling, // Added isSelling
+            price: price, // Added price
           ),
           if (isSelected)
             Positioned(

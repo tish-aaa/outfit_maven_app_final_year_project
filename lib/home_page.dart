@@ -6,6 +6,7 @@ import 'dart:async';
 import 'post_card.dart';
 import 'navbar.dart';
 import 'providers/user_provider.dart';
+import 'cart_page.dart'; // Create this new page
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,28 +19,14 @@ class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late PageController _quotesController;
   late Timer _quoteTimer;
+  int cartItemCount = 0;
 
   final List<Map<String, String>> fashionQuotes = [
-    {
-      "quote": "A statement belt can transform any outfit.",
-      "author": "Victoria Beckham"
-    },
-    {
-      "quote": "Style is a way to say who you are without having to speak.",
-      "author": "Rachel Zoe"
-    },
-    {
-      "quote": "Fashion is what you buy. Style is what you do with it.",
-      "author": "Nina Garcia"
-    },
-    {
-      "quote": "Clothes mean nothing until someone lives in them.",
-      "author": "Marc Jacobs"
-    },
-    {
-      "quote": "In order to be irreplaceable one must always be different.",
-      "author": "Coco Chanel"
-    },
+    {"quote": "A statement belt can transform any outfit.", "author": "Victoria Beckham"},
+    {"quote": "Style is a way to say who you are without having to speak.", "author": "Rachel Zoe"},
+    {"quote": "Fashion is what you buy. Style is what you do with it.", "author": "Nina Garcia"},
+    {"quote": "Clothes mean nothing until someone lives in them.", "author": "Marc Jacobs"},
+    {"quote": "In order to be irreplaceable one must always be different.", "author": "Coco Chanel"},
   ];
 
   @override
@@ -47,6 +34,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _quotesController = PageController(initialPage: 0);
     _startQuoteScroll();
+    _fetchCartCount();
   }
 
   void _startQuoteScroll() {
@@ -62,6 +50,14 @@ class _HomePageState extends State<HomePage> {
           );
         }
       }
+    });
+  }
+
+  void _fetchCartCount() {
+    FirebaseFirestore.instance.collection('cart').snapshots().listen((snapshot) {
+      setState(() {
+        cartItemCount = snapshot.docs.length;
+      });
     });
   }
 
@@ -81,141 +77,123 @@ class _HomePageState extends State<HomePage> {
       appBar: CustomAppBar(scaffoldKey: _scaffoldKey),
       drawer: CustomDrawer(),
       endDrawer: CustomEndDrawer(),
-      body: ListView(
+      body: Stack(
         children: [
-          // Fashion Quotes Section
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade100, // Matches your theme
-                border: Border.all(color: const Color(0xFF298A90), width: 2.0),
-                borderRadius: BorderRadius.circular(20.0),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      blurRadius: 5.0,
-                      spreadRadius: 2.0),
-                ],
-              ),
-              width: 320,
-              margin: const EdgeInsets.symmetric(vertical: 10.0),
-              height: 150.0,
-              child: PageView.builder(
-                controller: _quotesController,
-                itemCount: fashionQuotes.length,
-                itemBuilder: (context, index) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
+          ListView(
+            children: [
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20.0),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    border: Border.all(color: const Color(0xFF298A90), width: 2.0),
+                    borderRadius: BorderRadius.circular(20.0),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          blurRadius: 5.0,
+                          spreadRadius: 2.0),
+                    ],
+                  ),
+                  width: 320,
+                  margin: const EdgeInsets.symmetric(vertical: 10.0),
+                  height: 150.0,
+                  child: PageView.builder(
+                    controller: _quotesController,
+                    itemCount: fashionQuotes.length,
+                    itemBuilder: (context, index) {
+                      return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            '“',
-                            style: TextStyle(
-                              color: Color(0xFF298A90),
-                              fontSize: 40.0,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 5.0),
-                          SizedBox(
-                            width: 200,
-                            child: Text(
-                              fashionQuotes[index]["quote"]!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFF298A90),
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 5.0),
-                          const Text(
-                            '”',
-                            style: TextStyle(
-                              color: Color(0xFF298A90),
-                              fontSize: 40.0,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          Text("\"${fashionQuotes[index]['quote']}\"", 
+                              style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 10.0),
+                          Text("- ${fashionQuotes[index]['author']}", 
+                              style: const TextStyle(fontSize: 16.0, fontStyle: FontStyle.italic)),
                         ],
-                      ),
-                      const SizedBox(height: 10.0),
-                      Text(
-                        "- ${fashionQuotes[index]["author"]!}",
-                        style: const TextStyle(
-                          color: Color(0xFF298A90),
-                          fontSize: 16.0,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
-          ),
-
-          // Outfit Posts Section
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('outfits')
-                .where('isPrivate', isEqualTo: false)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Center(child: Text("No posts available."));
-              }
-
-              return Column(
-                children: snapshot.data!.docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>?;
-
-                  if (data == null ||
-                      !data.containsKey('postId') ||
-                      !data.containsKey('imageUrl') ||
-                      !data.containsKey('description') ||
-                      !data.containsKey('userId')) {
-                    return const SizedBox.shrink();
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('outfits').where('isPrivate', isEqualTo: false).snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
                   }
-
-                  return FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(data['userId'])
-                        .get(),
-                    builder: (context, userSnapshot) {
-                      if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                        return const SizedBox
-                            .shrink(); // Skip post if user data is missing
-                      }
-
-                      final userData =
-                          userSnapshot.data!.data() as Map<String, dynamic>?;
-
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text("No posts available."));
+                  }
+                  return Column(
+                    children: snapshot.data!.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
                       return OutfitPost(
                         postId: data['postId'],
                         imageUrl: data['imageUrl'],
                         description: data['description'],
                         userId: data['userId'],
-                        userName: userData?['username'] ?? "Unknown User",
-                        profileImageUrl: userData?['profileImageUrl'] ??
-                            "assets/defaultprofile.jpg",
-                        isPrivate: data['isPrivate'] ?? false,
+                        userName: data['userName'],
+                        profileImageUrl: data['profileImageUrl'],
+                        isPrivate: data['isPrivate'],
+                        isSelling: data['isSelling'] ?? false,
+                        price: data['price'] ?? 0.0, 
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
+          ),
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => CartPage(),
+                    transitionsBuilder: (_, animation, __, child) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(1, 0),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
                       );
                     },
-                  );
-                }).toList(),
-              );
-            },
-          )
+                  ),
+                );
+              },
+              backgroundColor: const Color(0xFF70C2BD),
+              child: Stack(
+                children: [
+                  const Icon(Icons.shopping_cart, size: 30, color: Colors.white),
+                  if (cartItemCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$cartItemCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
