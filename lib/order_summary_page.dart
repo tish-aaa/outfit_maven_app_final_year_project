@@ -83,7 +83,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                     Icon(Icons.image_not_supported),
                               )
                             : Icon(Icons.image_not_supported),
-                        title: Text(item['name'] ?? 'Unnamed Item'),
+                        title: Text(item['description'] ?? 'Unnamed Item'),
                         subtitle: Text('₹${(item['price'] as num?)?.toStringAsFixed(2) ?? '0.00'}'),
                       );
                     },

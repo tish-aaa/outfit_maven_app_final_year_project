@@ -25,7 +25,8 @@ class _CartPageState extends State<CartPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('My Cart', style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF1DCFCA), // Navbar Color
+        backgroundColor: Color(0xFF1DCFCA),
+        iconTheme: IconThemeData(color: Colors.white),
         elevation: 2,
       ),
       body: StreamBuilder(
