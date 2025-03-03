@@ -51,7 +51,25 @@ flutter:
     - assets/quiz/weather_quiz.jpeg
     - assets/quiz/mood_quiz.jpeg
     - assets/quiz/occasion_quiz.jpeg
+    - assets/quiz/accessories_quiz.jpeg
+    - assets/quiz/todays_outfit_quiz.jpeg
     - assets/quiz_results/energetic_playful.jpeg
     - assets/quiz_results/calm_elegant.jpeg
     - assets/quiz_results/edgy_moody.jpeg
     - assets/quiz_results/cozy_minimal.jpeg
+    - assets/quiz_results/casual_effortless.jpeg
+    - assets/quiz_results/business_formal.jpeg
+    - assets/quiz_results/elegant_bold.jpeg
+    - assets/quiz_results/cozy_laidback.jpeg
+    - assets/quiz_results/sunny_chic.jpeg
+    - assets/quiz_results/rainy_cozy.jpeg
+    - assets/quiz_results/winter_elegance.jpeg
+    - assets/quiz_results/windy_casual.jpeg
+    - assets/quiz_results/casual_comfy.jpeg
+    - assets/quiz_results/chic_trendy.jpeg
+    - assets/quiz_results/sporty_active.jpeg
+    - assets/quiz_results/edgy_streetwear.jpeg
+    - assets/quiz_results/minimal_elegant.jpeg
+    - assets/quiz_results/bold_statement.jpeg
+    - assets/quiz_results/sporty_functional.jpeg
+    - assets/quiz_results/edgy_experimental.jpeg
