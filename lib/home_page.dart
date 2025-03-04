@@ -218,7 +218,7 @@ class _HomePageState extends State<HomePage> {
                     clipper: QuoteClipper(),
                     child: Container(
                       width: 320,
-                      height: 160,
+                      height: 220,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [

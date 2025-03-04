@@ -14,12 +14,12 @@ class MyOutfitsPage extends StatefulWidget {
 }
 
 class _MyOutfitsPageState extends State<MyOutfitsPage> {
-  int _currentLayout = 0;
+  int _currentLayout = 3;
   final List<IconData> _layoutIcons = [
-    Icons.grid_on,
-    Icons.grid_view,
-    Icons.view_comfy,
-    Icons.list,
+    Icons.list, 
+    Icons.grid_on, // 1x1
+    Icons.grid_view, // 2x2
+    Icons.view_comfy, // 3x3
   ];
   Set<String> _selectedPosts = {};
   bool _isSelecting = false;
