@@ -6,7 +6,7 @@ import 'providers/user_provider.dart';
 import 'selectable_post.dart';
 import 'outfit_page.dart';
 import 'home_page.dart';
-import 'navigation/back_navigation_handler.dart'; 
+import 'navigation/back_navigation_handler.dart';
 
 class MyOutfitsPage extends StatefulWidget {
   @override
@@ -14,12 +14,12 @@ class MyOutfitsPage extends StatefulWidget {
 }
 
 class _MyOutfitsPageState extends State<MyOutfitsPage> {
-  int _currentLayout = 3;
+  int _currentLayout = 0;
   final List<IconData> _layoutIcons = [
-    Icons.list, 
-    Icons.grid_on, // 1x1
-    Icons.grid_view, // 2x2
     Icons.view_comfy, // 3x3
+    Icons.list,
+    Icons.grid_view, // 2x2
+    Icons.grid_on, // 1x1
   ];
   Set<String> _selectedPosts = {};
   bool _isSelecting = false;
@@ -122,7 +122,8 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
               ),
               onPressed: () {
                 setState(() {
-                  _currentLayout = (_currentLayout + 1) % _layoutIcons.length;
+                  _currentLayout =
+                      (_currentLayout + 1) % 4; // Ensures proper cycling order
                 });
               },
             ),
@@ -148,7 +149,7 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
             return RefreshIndicator(
               onRefresh: _refreshPosts,
               color: Colors.blue.shade100,
-              child: _currentLayout == 3
+              child: _currentLayout == 0
                   ? ListView.builder(
                       padding: EdgeInsets.all(8),
                       itemCount: posts.length,
@@ -186,11 +187,11 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                     )
                   : MasonryGridView.count(
                       padding: EdgeInsets.all(8),
-                      crossAxisCount: _currentLayout == 0
-                          ? 3
-                          : _currentLayout == 1
+                      crossAxisCount: _currentLayout == 1
+                          ? 1
+                          : _currentLayout == 2
                               ? 2
-                              : 1,
+                              : 3,
                       mainAxisSpacing: 8,
                       crossAxisSpacing: 8,
                       itemCount: posts.length,
@@ -208,8 +209,8 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
                           isPrivate: post['isPrivate'] ?? false,
                           isSelected: _selectedPosts.contains(post['postId']),
                           onSelect: _toggleSelect,
-                          forSale: post['forSale'] ?? false, // Added
-                          price: (post['price'] ?? 0).toDouble(), // Added
+                          forSale: post['forSale'] ?? false,
+                          price: (post['price'] ?? 0).toDouble(),
                         );
                       },
                     ),
