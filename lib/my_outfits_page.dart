@@ -113,7 +113,10 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
         ),
         actions: [
           IconButton(
-            icon: Icon(_layoutIcons[_currentLayout]),
+            icon: Icon(
+              _layoutIcons[_currentLayout],
+              color: Colors.white,
+            ),
             onPressed: () {
               setState(() {
                 _currentLayout = (_currentLayout + 1) % _layoutIcons.length;
