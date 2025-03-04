@@ -181,7 +181,7 @@ class _ProfilePageState extends State<ProfilePage> {
             GestureDetector(
               onTap: _uploadImage,
               child: CircleAvatar(
-                radius: 50,
+                radius: 111,
                 backgroundColor: Colors.transparent,
                 backgroundImage: userProvider.profileImageUrl !=
                         UserProvider.defaultProfileImage
