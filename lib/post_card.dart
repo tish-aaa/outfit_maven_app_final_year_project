@@ -38,16 +38,35 @@ class _OutfitPostState extends State<OutfitPost> {
   int _likeCount = 0;
   int _cartCount = 0;
   double? _price;
-  final TextEditingController _commentController = TextEditingController();
+  TextEditingController _commentController = TextEditingController();
+
+  // Track live username and profile updates
+  String _username = "";
+  String _profileImageUrl = "";
 
   @override
   void initState() {
     super.initState();
     _isPrivate = widget.isPrivate;
     _price = widget.price;
+    _username = widget.userName;
+    _profileImageUrl = widget.profileImageUrl;
+
     _fetchLikeCount();
     _fetchLikeStatus();
     _listenForPriceUpdates();
+    _listenForProfileUpdates();
+  }
+
+  void _listenForProfileUpdates() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
+    if (userProvider.userId == widget.userId) {
+      setState(() {
+        _username = userProvider.username;
+        _profileImageUrl = userProvider.profileImageUrl;
+      });
+    }
   }
 
   void _fetchLikeStatus() {
@@ -225,14 +244,13 @@ class _OutfitPostState extends State<OutfitPost> {
               children: [
                 CircleAvatar(
                   backgroundImage: CachedNetworkImageProvider(
-                    widget.profileImageUrl.isNotEmpty
-                        ? widget.profileImageUrl
+                    _profileImageUrl.isNotEmpty
+                        ? _profileImageUrl
                         : 'assets/defaultprofile.png',
                   ),
                 ),
                 SizedBox(width: 10),
-                Text(widget.userName,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(_username, style: TextStyle(fontWeight: FontWeight.bold)),
                 Spacer(),
                 if (widget.isPrivate)
                   Icon(Icons.lock, color: Colors.red, size: 20),
