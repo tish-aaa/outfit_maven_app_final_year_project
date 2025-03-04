@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'order_summary_page.dart';
-import 'navigation/back_navigation_handler.dart'; 
+import 'navigation/back_navigation_handler.dart';
 
 class AddressPage extends StatefulWidget {
   @override
@@ -25,6 +25,24 @@ class _AddressPageState extends State<AddressPage> {
   void initState() {
     super.initState();
     _fetchAddresses();
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Phone number is required';
+    } else if (!RegExp(r'^[0-9]{10}$').hasMatch(value)) {
+      return 'Enter a valid 10-digit phone number';
+    }
+    return null;
+  }
+
+  String? _validatePincode(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Pincode is required';
+    } else if (!RegExp(r'^[0-9]{6}$').hasMatch(value)) {
+      return 'Enter a valid 6-digit pincode';
+    }
+    return null;
   }
 
   Future<void> _fetchAddresses() async {
@@ -84,8 +102,22 @@ class _AddressPageState extends State<AddressPage> {
             .update(addressData);
       }
 
+      Navigator.pop(context); // Close the bottom sheet
       _fetchAddresses();
-      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _deleteAddress(String addressId) async {
+    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (userId.isNotEmpty) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('addresses')
+          .doc(addressId)
+          .delete();
+
+      _fetchAddresses();
     }
   }
 
@@ -148,20 +180,6 @@ class _AddressPageState extends State<AddressPage> {
     );
   }
 
-  String? _validatePhone(String? value) {
-    if (value == null || value.length != 10) {
-      return 'Phone number must be exactly 10 digits';
-    }
-    return null;
-  }
-
-  String? _validatePincode(String? value) {
-    if (value == null || value.length != 6) {
-      return 'Pincode must be exactly 6 digits';
-    }
-    return null;
-  }
-
   Widget _buildTextField(TextEditingController controller, String label,
       {TextInputType keyboardType = TextInputType.text,
       int? maxLength,
@@ -184,37 +202,49 @@ class _AddressPageState extends State<AddressPage> {
   }
 
   @override
-  @override
-  @override
   Widget build(BuildContext context) {
     return BackNavigationHandler(
       child: Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0xFF1DCFCA),
-        title: Text('Manage Addresses', style: TextStyle(color: Colors.white)),
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(15),
-              itemCount: _savedAddresses.length,
-              itemBuilder: (context, index) {
-                var address = _savedAddresses[index];
-                return ListTile(
-                  title: Text(address['name']),
-                  subtitle: Text(
-                      "${address['building']}, ${address['area']}, ${address['city']}, ${address['state']} - ${address['pincode']}"),
-                  trailing: IconButton(
-                    icon: Icon(Icons.edit, color: Color(0xFF1DCFCA)),
-                    onPressed: () => _showAddressForm(address: address),
-                  ),
-                );
-              },
+        appBar: AppBar(
+          backgroundColor: Color(0xFF1DCFCA),
+          title:
+              Text('Manage Addresses', style: TextStyle(color: Colors.white)),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: _savedAddresses.isEmpty
+                  ? Center(child: Text("No saved addresses yet."))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(15),
+                      itemCount: _savedAddresses.length,
+                      itemBuilder: (context, index) {
+                        var address = _savedAddresses[index];
+                        return ListTile(
+                          title: Text(address['name']),
+                          subtitle: Text(
+                              "${address['building']}, ${address['area']}, ${address['city']}, ${address['state']} - ${address['pincode']}"),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon:
+                                    Icon(Icons.edit, color: Color(0xFF1DCFCA)),
+                                onPressed: () =>
+                                    _showAddressForm(address: address),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteAddress(address['id']),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
-          ),
-          Padding(
+            Padding(
             padding: const EdgeInsets.symmetric(
                 horizontal: 20, vertical: 10), // Left and Right Margin
             child: Column(
@@ -244,12 +274,13 @@ class _AddressPageState extends State<AddressPage> {
                     minimumSize: Size(double.infinity, 50),
                   ),
                   child: Text('Next'),
-                ),
+                )
               ],
             ),
-          ),
-        ],
-      ),
+            ),
+          ],
+          
+        ),
       ),
     );
   }
