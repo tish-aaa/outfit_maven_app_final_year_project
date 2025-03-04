@@ -17,7 +17,8 @@ class UserProvider with ChangeNotifier {
   Set<String> _purchasedItems = {}; // Track purchased items in real-time
   Map<String, Map<String, dynamic>> _cartDetails = {};
   Map<String, Map<String, dynamic>> get cartDetails => _cartDetails;
-
+  List<Map<String, dynamic>> _ordersHistory = [];
+  List<Map<String, dynamic>> get ordersHistory => _ordersHistory;
   String get userId => _userId.isNotEmpty ? _userId : 'unknown_user';
   String get username => _username.isNotEmpty ? _username : 'Unknown User';
   String get profileImageUrl =>
@@ -51,6 +52,7 @@ class UserProvider with ChangeNotifier {
         _listenToPostChanges();
         _listenToCartChanges();
         _listenToPurchasedItems();
+        _listenToOrdersHistory();
       } else {
         _resetUserData();
       }
@@ -185,25 +187,60 @@ class UserProvider with ChangeNotifier {
 
   Future<void> storeOrder() async {
     if (userId == null) return; // Ensure user is logged in
-
     if (cartItems.isEmpty) return; // No need to proceed if cart is empty
 
     try {
-      // Create an order document
-      await FirebaseFirestore.instance.collection('orders').add({
+      // Create an order document with an auto-generated ID
+      final orderRef =
+          await FirebaseFirestore.instance.collection('orders').add({
         'userId': userId,
         'items': cartItems,
         'totalAmount': cartItems.fold(
             0.0, (sum, item) => sum + ((item['price'] as num?) ?? 0.0)),
         'timestamp': FieldValue.serverTimestamp(),
+        'status': 'Processing', // Default status
       });
 
-      // Clear cart after placing the order
-      cartItems.clear();
+      // Fetch the generated order ID
+      final orderId = orderRef.id;
+
+      // Update locally in ordersHistory
+      final newOrder = {
+        'id': orderId,
+        'items': List<Map<String, dynamic>>.from(cartItems),
+        'totalAmount': cartItems.fold(
+            0.0, (sum, item) => sum + ((item['price'] as num?) ?? 0.0)),
+        'timestamp': DateTime.now().toString(),
+        'status': 'Processing',
+      };
+
+      _ordersHistory.insert(0, newOrder); // Add the new order at the top
+      cartItems.clear(); // Clear cart after placing order
       notifyListeners();
     } catch (e) {
       debugPrint("Error storing order: $e");
     }
+  }
+
+  void _listenToOrdersHistory() {
+    FirebaseFirestore.instance
+        .collection('orders')
+        .where('userId', isEqualTo: _userId)
+        .snapshots()
+        .listen((snapshot) {
+      _ordersHistory = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'items': List<Map<String, dynamic>>.from(data['items'] ?? []),
+          'totalAmount': (data['totalAmount'] as num?)?.toDouble() ?? 0.0,
+          'timestamp': data['timestamp'] ?? '',
+          'status': data['status'] ?? 'Processing',
+        };
+      }).toList();
+
+      notifyListeners();
+    });
   }
 
   Future<void> addToCart(

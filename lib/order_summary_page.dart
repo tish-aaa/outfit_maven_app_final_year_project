@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../providers/user_provider.dart';
-import 'navigation/back_navigation_handler.dart'; 
+import 'navigation/back_navigation_handler.dart';
+import 'orders_history_page.dart';
 
 class OrderSummaryPage extends StatefulWidget {
   @override
@@ -9,7 +11,19 @@ class OrderSummaryPage extends StatefulWidget {
 }
 
 class _OrderSummaryPageState extends State<OrderSummaryPage> {
-  void _simulatePayment(double totalAmount, UserProvider userProvider) {
+  late Razorpay _razorpay;
+
+  @override
+  void initState() {
+    super.initState();
+    _razorpay = Razorpay();
+
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
+
+  void _startRazorpayPayment(double totalAmount, UserProvider userProvider) {
     if (totalAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Cart is empty. Add items before proceeding.")),
@@ -17,33 +31,29 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       return;
     }
 
-    // Show Processing Dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title:
-            Text("Processing Payment", style: TextStyle(color: Colors.black)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Color(0xFF1DCFCA)),
-            SizedBox(height: 10),
-            Text("Please wait while we process your payment..."),
-          ],
-        ),
-      ),
-    );
+    var options = {
+      'key': 'rzp_test_LXZO1v4DgjDFKy', // Replace with your Razorpay API key
+      'amount': (totalAmount * 100).toInt(), // Convert to paise
+      'currency': 'INR',
+      'name': 'Outfit Maven',
+      'description': 'Order Payment',
+      'prefill': {
+        'contact': '8108118884', // Replace with actual user data
+        'email': 'tishaaa.dev@gmail.com'
+      },
+      'theme': {'color': '#1DCFCA'},
+    };
 
-    // Simulating successful payment after 2 seconds
-    Future.delayed(Duration(seconds: 2), () {
-      Navigator.pop(context); // Close loading dialog
-      _handlePaymentSuccess(userProvider);
-    });
+    try {
+      _razorpay.open(options);
+    } catch (e) {
+      print("Error: $e");
+    }
   }
 
-  void _handlePaymentSuccess(UserProvider userProvider) {
+  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Payment Successful! Order Placed."),
@@ -54,8 +64,33 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     // Store order details in Firestore
     userProvider.storeOrder();
 
-    // Navigate to success page (or homepage)
-    Navigator.pop(context);
+    // Add a short delay before navigating
+    Future.delayed(Duration(milliseconds: 500), () {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => OrdersHistoryPage()),
+        (route) => false, // Clears all previous routes
+      );
+    });
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Payment Failed. Try Again.")),
+    );
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text("External Wallet Selected: ${response.walletName}")),
+    );
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
   }
 
   @override
@@ -159,11 +194,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Total:',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+                      Text('Total:',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                       Text(
                         '₹${totalAmount.toStringAsFixed(2)}',
                         style: TextStyle(
@@ -178,7 +211,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () =>
-                          _simulatePayment(totalAmount, userProvider),
+                          _startRazorpayPayment(totalAmount, userProvider),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF70C2BD),
                         foregroundColor: Colors.white,
