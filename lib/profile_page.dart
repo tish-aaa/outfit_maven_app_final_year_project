@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
+import 'package:flutter/services.dart';
 import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
@@ -33,6 +34,8 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
 
   @override
   void initState() {
@@ -58,6 +61,8 @@ class _ProfilePageState extends State<ProfilePage> {
             age = data["age"]?.toString() ?? "";
             username = data["username"] ?? "";
 
+            firstNameController.text = firstName;
+            lastNameController.text = lastName;
             phoneController.text = phone;
             ageController.text = age;
             usernameController.text = username;
@@ -109,23 +114,28 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> updateProfile() async {
     if (user != null) {
-      if (firstName.isEmpty || lastName.isEmpty || username.isEmpty) {
+      if (firstNameController.text.trim().isEmpty ||
+          lastNameController.text.trim().isEmpty ||
+          usernameController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("First Name, Last Name, and Username are required")),
+          SnackBar(
+              content:
+                  Text("First Name, Last Name, and Username are required")),
         );
         return;
       }
 
-      if (phoneController.text.length != 10 &&
-          phoneController.text.isNotEmpty) {
+      if (phoneController.text.isNotEmpty &&
+          phoneController.text.length != 10) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Phone number must be exactly 10 digits")));
         return;
       }
 
-      if (int.tryParse(ageController.text) == null ||
-          int.parse(ageController.text) < 5 ||
-          int.parse(ageController.text) > 111) {
+      if (ageController.text.isNotEmpty &&
+          (int.tryParse(ageController.text) == null ||
+              int.parse(ageController.text) < 5 ||
+              int.parse(ageController.text) > 111)) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text("Please enter a valid age between 5 and 111")));
         return;
@@ -133,6 +143,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
       try {
         await _firestore.collection("users").doc(user!.uid).update({
+          "firstName": firstNameController.text.trim(),
+          "lastName": lastNameController.text.trim(),
           "phone": phoneController.text.trim(),
           "age": ageController.text.trim(),
           "username": usernameController.text.trim(),
@@ -179,9 +191,11 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             SizedBox(height: 20),
-            ProfileInfo(title: "First Name", value: firstName),
+            EditableTextField(
+                controller: firstNameController, label: "First Name"),
             SizedBox(height: 15),
-            ProfileInfo(title: "Last Name", value: lastName),
+            EditableTextField(
+                controller: lastNameController, label: "Last Name"),
             SizedBox(height: 15),
             TextField(
               controller: TextEditingController(text: email),
@@ -204,7 +218,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   return null;
                 }),
             SizedBox(height: 15),
-            EditableTextField(controller: ageController, label: "Age"),
+            EditableTextField(
+                controller: ageController,
+                label: "Age",
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly, // Ensures only digits
+                ]),
             SizedBox(height: 15),
             EditableTextField(
                 controller: usernameController, label: "Username"),
@@ -228,42 +247,17 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-class ProfileInfo extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const ProfileInfo({required this.title, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(value, style: TextStyle(fontSize: 16)),
-        ),
-      ],
-    );
-  }
-}
-
 class EditableTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String? Function(String?)? validator;
+  final List<TextInputFormatter>? inputFormatters;
 
   const EditableTextField({
     required this.controller,
     required this.label,
     this.validator,
+    this.inputFormatters,
   });
 
   @override
@@ -272,6 +266,7 @@ class EditableTextField extends StatelessWidget {
       controller: controller,
       keyboardType:
           label == "Phone Number" ? TextInputType.phone : TextInputType.text,
+      inputFormatters: inputFormatters, // Add the input formatter
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Color(0xFF70C2BD)),
