@@ -15,6 +15,24 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
+class QuoteClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+    path.moveTo(0, size.height * 0.2);
+    path.quadraticBezierTo(
+        size.width * 0.5, -20, size.width, size.height * 0.2);
+    path.lineTo(size.width, size.height - 20);
+    path.quadraticBezierTo(
+        size.width * 0.5, size.height + 20, 0, size.height - 20);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => true;
+}
+
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late PageController _quotesController;
@@ -23,25 +41,119 @@ class _HomePageState extends State<HomePage> {
 
   final List<Map<String, String>> fashionQuotes = [
     {
-      "quote": "A statement belt can transform any outfit.",
-      "author": "Victoria Beckham"
+      "quote": "Fashion fades, only style remains the same.",
+      "author": "Coco Chanel"
+    },
+    {
+      "quote": "Fashions fade, style is eternal.",
+      "author": "Yves Saint Laurent"
+    },
+    {
+      "quote": "Trendy is the last stage before tacky.",
+      "author": "Karl Lagerfeld"
+    },
+    {
+      "quote":
+          "You can never take too much care over the choice of your shoes. Too many women think that they are unimportant, but the real proof of an elegant woman is what is on her feet.",
+      "author": "Christian Dior"
+    },
+    {
+      "quote":
+          "Don’t be into trends. Don’t make fashion own you, but you decide what you are.",
+      "author": "Gianni Versace"
+    },
+    {
+      "quote":
+          "I think there is beauty in everything. What ‘normal’ people perceive as ugly, I can usually see something of beauty in it.",
+      "author": "Alexander McQueen"
+    },
+    {
+      "quote": "Creativity comes from a conflict of ideas.",
+      "author": "Donatella Versace"
+    },
+    {
+      "quote":
+          "Style is very personal. It has nothing to do with fashion. Fashion is over quickly. Style is forever.",
+      "author": "Ralph Lauren"
+    },
+    {
+      "quote": "Buy less, choose well, make it last.",
+      "author": "Vivienne Westwood"
+    },
+    {"quote": "Dressing well is a form of good manners.", "author": "Tom Ford"},
+    {
+      "quote": "Elegance is the only beauty that never fades.",
+      "author": "Audrey Hepburn"
+    },
+    {
+      "quote": "Give a girl the right shoes, and she can conquer the world.",
+      "author": "Marilyn Monroe"
+    },
+    {
+      "quote": "She can beat me, but she cannot beat my outfit.",
+      "author": "Rihanna"
+    },
+    {
+      "quote": "The most beautiful thing you can wear is confidence.",
+      "author": "Blake Lively"
+    },
+    {
+      "quote": "Fashion is a great thing, it’s a way to express who you are.",
+      "author": "Zendaya"
+    },
+    {
+      "quote":
+          "I like my money right where I can see it… hanging in my closet.",
+      "author": "Sarah Jessica Parker"
+    },
+    {
+      "quote":
+          "Individuality means freedom. Fashion is what you adopt when you don’t know who you are.",
+      "author": "Lady Gaga"
+    },
+    {"quote": "Honey, I always look good.", "author": "Kim Kardashian"},
+    {
+      "quote": "The most alluring thing a woman can have is confidence.",
+      "author": "Beyoncé"
+    },
+    {"quote": "I can’t concentrate in flats.", "author": "Victoria Beckham"},
+    {
+      "quote": "I think that personality does affect your style.",
+      "author": "Gigi Hadid"
+    },
+    {
+      "quote": "Fashion is about fun and expression.",
+      "author": "Kendall Jenner"
+    },
+    {
+      "quote":
+          "You can be a woman who wants to look good and still stand up for the equality of women.",
+      "author": "Naomi Campbell"
+    },
+    {"quote": "Never complain, never explain.", "author": "Kate Moss"},
+    {
+      "quote":
+          "Fashion and style are completely different things. Fashion is temporary, but style is forever.",
+      "author": "Cindy Crawford"
+    },
+    {
+      "quote":
+          "The way you dress tells people who you are before you even say a word.",
+      "author": "Hailey Bieber"
+    },
+    {
+      "quote": "Dress for yourself. That’s all that matters.",
+      "author": "Bella Hadid"
     },
     {
       "quote": "Style is a way to say who you are without having to speak.",
-      "author": "Rachel Zoe"
+      "author": "Emily Ratajkowski"
     },
+    {"quote": "Confidence makes everything look good.", "author": "Dua Lipa"},
     {
-      "quote": "Fashion is what you buy. Style is what you do with it.",
-      "author": "Nina Garcia"
-    },
-    {
-      "quote": "Clothes mean nothing until someone lives in them.",
-      "author": "Marc Jacobs"
-    },
-    {
-      "quote": "In order to be irreplaceable one must always be different.",
-      "author": "Coco Chanel"
-    },
+      "quote": "Wear your confidence like a crown and rock it!",
+      "author": "Tyra Banks"
+    }
   ];
 
   @override
@@ -101,39 +213,71 @@ class _HomePageState extends State<HomePage> {
             children: [
               Center(
                 child: Container(
-                  padding: const EdgeInsets.all(20.0),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    border:
-                        Border.all(color: const Color(0xFF298A90), width: 2.0),
-                    borderRadius: BorderRadius.circular(20.0),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          blurRadius: 5.0,
-                          spreadRadius: 2.0),
-                    ],
-                  ),
-                  width: 320,
-                  margin: const EdgeInsets.symmetric(vertical: 10.0),
-                  height: 150.0,
-                  child: PageView.builder(
-                    controller: _quotesController,
-                    itemCount: fashionQuotes.length,
-                    itemBuilder: (context, index) {
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("\"${fashionQuotes[index]['quote']}\"",
-                              style: const TextStyle(
-                                  fontSize: 18.0, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 10.0),
-                          Text("- ${fashionQuotes[index]['author']}",
-                              style: const TextStyle(
-                                  fontSize: 16.0, fontStyle: FontStyle.italic)),
+                  margin: const EdgeInsets.symmetric(vertical: 15.0),
+                  child: ClipPath(
+                    clipper: QuoteClipper(),
+                    child: Container(
+                      width: 320,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF70C2BD).withOpacity(0.8),
+                            Color(0xFF1DCFCA).withOpacity(0.8)
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8.0,
+                            spreadRadius: 2.0,
+                            offset: const Offset(2, 4),
+                          ),
                         ],
-                      );
-                    },
+                      ),
+                      child: PageView.builder(
+                        controller: _quotesController,
+                        itemCount: fashionQuotes.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 20),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "“${fashionQuotes[index]['quote']}”",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black26,
+                                        blurRadius: 3.0,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "- ${fashionQuotes[index]['author']}",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),
