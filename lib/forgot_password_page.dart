@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'navigation/back_navigation_handler.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   @override
@@ -25,34 +26,36 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     try {
       await _auth.sendPasswordResetEmail(email: _emailController.text.trim());
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Password reset email sent!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset email sent!')));
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message ?? 'Failed to send reset email')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Failed to send reset email')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Forgot Password')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _sendPasswordReset,
-              child: const Text('Send Reset Email'),
-            ),
-          ],
+    return BackNavigationHandler(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Forgot Password')),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _sendPasswordReset,
+                child: const Text('Send Reset Email'),
+              ),
+            ],
+          ),
         ),
       ),
     );

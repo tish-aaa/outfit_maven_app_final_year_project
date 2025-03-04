@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'order_summary_page.dart';
+import 'navigation/back_navigation_handler.dart'; 
 
 class AddressPage extends StatefulWidget {
   @override
@@ -186,7 +187,8 @@ class _AddressPageState extends State<AddressPage> {
   @override
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BackNavigationHandler(
+      child: Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF1DCFCA),
         title: Text('Manage Addresses', style: TextStyle(color: Colors.white)),
@@ -247,6 +249,7 @@ class _AddressPageState extends State<AddressPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

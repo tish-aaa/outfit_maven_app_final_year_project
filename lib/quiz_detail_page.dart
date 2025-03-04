@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'quiz_model.dart';
+import 'navigation/back_navigation_handler.dart';
 
 class QuizDetailPage extends StatefulWidget {
   final Quiz quiz;
@@ -117,79 +118,81 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.quiz.title, style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF70C2BD),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+    return BackNavigationHandler(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.quiz.title, style: TextStyle(color: Colors.white)),
+          backgroundColor: Color(0xFF70C2BD),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20)),
-              child: Image.asset(widget.quiz.image,
-                  height: 220, width: double.infinity, fit: BoxFit.cover),
-            ),
-            SizedBox(height: 20),
-            ...widget.quiz.questions.asMap().entries.map((entry) {
-              int index = entry.key;
-              Question question = entry.value;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
-                      question.questionText,
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF298A90)),
-                    ),
-                  ),
-                  ...question.options.map((option) {
-                    return ListTile(
-                      title: Text(option,
-                          style: TextStyle(
-                              fontSize: 16, color: Color(0xFF1D8A7A))),
-                      leading: Radio<String>(
-                        value: option,
-                        groupValue: selectedAnswers[index],
-                        activeColor: Color(0xFF1DCFCA),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedAnswers[index] = value!;
-                          });
-                        },
+        body: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20)),
+                child: Image.asset(widget.quiz.image,
+                    height: 220, width: double.infinity, fit: BoxFit.cover),
+              ),
+              SizedBox(height: 20),
+              ...widget.quiz.questions.asMap().entries.map((entry) {
+                int index = entry.key;
+                Question question = entry.value;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        question.questionText,
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF298A90)),
                       ),
-                    );
-                  }).toList(),
-                  SizedBox(height: 10),
-                ],
-              );
-            }).toList(),
-            SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF70C2BD),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    ),
+                    ...question.options.map((option) {
+                      return ListTile(
+                        title: Text(option,
+                            style: TextStyle(
+                                fontSize: 16, color: Color(0xFF1D8A7A))),
+                        leading: Radio<String>(
+                          value: option,
+                          groupValue: selectedAnswers[index],
+                          activeColor: Color(0xFF1DCFCA),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedAnswers[index] = value!;
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
+                    SizedBox(height: 10),
+                  ],
+                );
+              }).toList(),
+              SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF70C2BD),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                ),
+                onPressed: _showResult,
+                child: Text(
+                  "Get Recommendation",
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
               ),
-              onPressed: _showResult,
-              child: Text(
-                "Get Recommendation",
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

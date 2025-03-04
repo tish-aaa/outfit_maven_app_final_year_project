@@ -3,6 +3,7 @@ import 'package:animate_do/animate_do.dart';
 import 'home_page.dart';
 import 'quiz_model.dart';
 import 'quiz_detail_page.dart';
+import 'navigation/back_navigation_handler.dart'; 
 
 IconData _getIconFromName(String iconName) {
   switch (iconName) {
@@ -28,44 +29,46 @@ class OutfitQuizPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        title: Text('Fashion Quizzes',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: primaryColor,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomePage()),
-              );
-            }
-          },
+    return BackNavigationHandler(
+      child: Scaffold(
+        backgroundColor: bgColor,
+        appBar: AppBar(
+          title: Text('Fashion Quizzes',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          centerTitle: true,
+          backgroundColor: primaryColor,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomePage()),
+                );
+              }
+            },
+          ),
         ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: ListView(
-          children: [
-            FadeInDown(
-              duration: Duration(milliseconds: 500),
-              child: Text(
-                '✨ Pick a quiz and unlock your fashion potential!',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87),
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: ListView(
+            children: [
+              FadeInDown(
+                duration: Duration(milliseconds: 500),
+                child: Text(
+                  '✨ Pick a quiz and unlock your fashion potential!',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87),
+                ),
               ),
-            ),
-            SizedBox(height: 15),
-            ...quizzes.map((quiz) => _buildQuizCard(context, quiz)).toList(),
-          ],
+              SizedBox(height: 15),
+              ...quizzes.map((quiz) => _buildQuizCard(context, quiz)).toList(),
+            ],
+          ),
         ),
       ),
     );
