@@ -121,6 +121,10 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
       appBar: AppBar(
         title: Text(widget.quiz.title, style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xFF70C2BD),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),

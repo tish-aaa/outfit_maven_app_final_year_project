@@ -109,6 +109,28 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> updateProfile() async {
     if (user != null) {
+      if (firstName.isEmpty || lastName.isEmpty || username.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("First Name, Last Name, and Username are required")),
+        );
+        return;
+      }
+
+      if (phoneController.text.length != 10 &&
+          phoneController.text.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Phone number must be exactly 10 digits")));
+        return;
+      }
+
+      if (int.tryParse(ageController.text) == null ||
+          int.parse(ageController.text) < 5 ||
+          int.parse(ageController.text) > 111) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Please enter a valid age between 5 and 111")));
+        return;
+      }
+
       try {
         await _firestore.collection("users").doc(user!.uid).update({
           "phone": phoneController.text.trim(),
@@ -132,7 +154,14 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
-      appBar: AppBar(title: Text("My Profile")),
+      appBar: AppBar(
+        title: Text("My Profile", style: TextStyle(color: Colors.white)),
+        backgroundColor: Color(0xFF70C2BD),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -166,7 +195,14 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: 15),
             EditableTextField(
-                controller: phoneController, label: "Phone Number"),
+                controller: phoneController,
+                label: "Phone Number",
+                validator: (value) {
+                  if (value!.isNotEmpty && value.length != 10) {
+                    return 'Phone number must be 10 digits';
+                  }
+                  return null;
+                }),
             SizedBox(height: 15),
             EditableTextField(controller: ageController, label: "Age"),
             SizedBox(height: 15),
@@ -176,6 +212,14 @@ class _ProfilePageState extends State<ProfilePage> {
             ElevatedButton(
               onPressed: updateProfile,
               child: Text("Update Profile"),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(
+                    Color(0xFF70C2BD)), // Set background color
+                foregroundColor:
+                    MaterialStateProperty.all(Colors.white), // Set text color
+                minimumSize: MaterialStateProperty.all(
+                    Size(double.infinity, 50)), // Full width and height
+              ),
             ),
           ],
         ),
@@ -214,16 +258,26 @@ class ProfileInfo extends StatelessWidget {
 class EditableTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
+  final String? Function(String?)? validator;
 
-  const EditableTextField({required this.controller, required this.label});
+  const EditableTextField({
+    required this.controller,
+    required this.label,
+    this.validator,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      keyboardType:
+          label == "Phone Number" ? TextInputType.phone : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(color: Color(0xFF70C2BD)),
         border: OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
       ),
     );
   }
