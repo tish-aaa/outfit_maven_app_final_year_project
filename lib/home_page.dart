@@ -54,11 +54,6 @@ class _HomePageState extends State<HomePage> {
     },
     {
       "quote":
-          "You can never take too much care over the choice of your shoes. Too many women think that they are unimportant, but the real proof of an elegant woman is what is on her feet.",
-      "author": "Christian Dior"
-    },
-    {
-      "quote":
           "Don’t be into trends. Don’t make fashion own you, but you decide what you are.",
       "author": "Gianni Versace"
     },
@@ -153,6 +148,11 @@ class _HomePageState extends State<HomePage> {
     {
       "quote": "Wear your confidence like a crown and rock it!",
       "author": "Tyra Banks"
+    },
+    {
+      "quote":
+          "You can never take too much care over the choice of your shoes. Too many women think that they are unimportant, but the real proof of an elegant woman is what is on her feet.",
+      "author": "Christian Dior"
     }
   ];
 
