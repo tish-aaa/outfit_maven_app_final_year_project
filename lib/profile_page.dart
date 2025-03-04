@@ -84,7 +84,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
         await _updateProfileImageUrlInFirestore(response.secureUrl);
 
-        Provider.of<UserProvider>(context, listen: false).updateProfileImage(response.secureUrl);
+        Provider.of<UserProvider>(context, listen: false)
+            .updateProfileImage(response.secureUrl);
       } catch (e) {
         print("Error uploading image to Cloudinary: $e");
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,9 +142,11 @@ class _ProfilePageState extends State<ProfilePage> {
               child: CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.transparent,
-                backgroundImage: userProvider.profileImageUrl.isNotEmpty
+                backgroundImage: userProvider.profileImageUrl !=
+                        UserProvider.defaultProfileImage
                     ? NetworkImage(userProvider.profileImageUrl)
-                    : AssetImage("assets/defaultprofile.png") as ImageProvider,
+                    : AssetImage(UserProvider.defaultProfileImage)
+                        as ImageProvider,
               ),
             ),
             SizedBox(height: 20),
@@ -162,11 +165,13 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             SizedBox(height: 15),
-            EditableTextField(controller: phoneController, label: "Phone Number"),
+            EditableTextField(
+                controller: phoneController, label: "Phone Number"),
             SizedBox(height: 15),
             EditableTextField(controller: ageController, label: "Age"),
             SizedBox(height: 15),
-            EditableTextField(controller: usernameController, label: "Username"),
+            EditableTextField(
+                controller: usernameController, label: "Username"),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: updateProfile,
