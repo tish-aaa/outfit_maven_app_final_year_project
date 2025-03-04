@@ -60,7 +60,7 @@ class _OutfitPostState extends State<OutfitPost> {
 
   void _listenForProfileUpdates() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
+
     if (userProvider.userId == widget.userId) {
       setState(() {
         _username = userProvider.username;
@@ -299,18 +299,19 @@ class _OutfitPostState extends State<OutfitPost> {
                 ],
               ),
               IconButton(
-                  icon: Icon(Icons.comment, color: Color(0xFF298A90)),
-                  onPressed: _openComments),
+                icon: Icon(Icons.comment, color: Color(0xFF298A90)),
+                onPressed: _openComments,
+              ),
             ],
           ),
+
+// ✅ Cart section is now exactly below the comment box
           if (widget.forSale)
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 5.0),
+              padding: const EdgeInsets.only(left: 12.0, right: 0.0, top: 5.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Display the price in bold with the same color as the likes count
                   Text(
                     "₹${_price?.toStringAsFixed(2) ?? "-"}",
                     style: TextStyle(
@@ -319,7 +320,6 @@ class _OutfitPostState extends State<OutfitPost> {
                       fontSize: 16,
                     ),
                   ),
-                  // Display the cart icon
                   IconButton(
                     icon: Icon(Icons.shopping_cart, color: Color(0xFF19A99F)),
                     onPressed: _addToCart,
