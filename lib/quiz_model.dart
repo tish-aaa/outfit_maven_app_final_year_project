@@ -146,7 +146,7 @@ List<Quiz> quizzes = [
     },
   ),
   Quiz(
-    title: "Occasion-Based Outfit Quiz: What Should You Wear Today?",
+    title: "Occasion-Based Outfit Quiz:",
     image: "assets/quiz/occasion_quiz.jpeg",
     iconName: "event",
     titleDescription:
