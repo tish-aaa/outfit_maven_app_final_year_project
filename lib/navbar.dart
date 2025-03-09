@@ -14,6 +14,7 @@ import 'liked_inspo_page.dart';
 import 'profile_page.dart';
 import 'outfit_quiz.dart';
 import 'my_outfits_page.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -35,9 +36,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             },
           ),
           title: Center(
-            child: Image.asset(
-              'assets/outfit_maven_logo.png',
-              height: 50,
+            child: Text(
+              'Outfit Maven',
+              style: GoogleFonts.cinzelDecorative(
+                textStyle: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
           actions: [
