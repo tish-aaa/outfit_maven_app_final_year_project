@@ -151,7 +151,7 @@ class _HomePageState extends State<HomePage> {
     },
     {
       "quote":
-          "You can never take too much care over the choice of your shoes. Too many women think that they are unimportant, but the real proof of an elegant woman is what is on her feet.",
+          "Fashion is a reflection of who you are. Dare to be different, and you’ll always be stylish.",
       "author": "Christian Dior"
     }
   ];
