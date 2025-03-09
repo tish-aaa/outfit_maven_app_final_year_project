@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-
+import 'package:cached_network_image/cached_network_image.dart';
 import 'post_card.dart';
 import 'navbar.dart';
 import 'providers/user_provider.dart';
@@ -34,6 +34,8 @@ class QuoteClipper extends CustomClipper<Path> {
 }
 
 class _HomePageState extends State<HomePage> {
+  String? _expandedImageUrl;
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late PageController _quotesController;
   late Timer _quoteTimer;
@@ -198,6 +200,34 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  void _expandImage(String imageUrl) {
+    if (imageUrl.isEmpty) return; // Prevent opening if URL is empty
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return GestureDetector(
+          onTap: () => Navigator.of(context).pop(), // Close on tap
+          child: Container(
+            color: Colors.black.withOpacity(0.8),
+            alignment: Alignment.center,
+            child: CachedNetworkImage(
+              imageUrl: imageUrl, // Use parameter instead of _expandedImageUrl
+              placeholder: (context, url) => const CircularProgressIndicator(),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _closeExpandedImage() {
+    setState(() {
+      _expandedImageUrl = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -284,38 +314,102 @@ class _HomePageState extends State<HomePage> {
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('outfits')
-                    .where('isPrivate', isEqualTo: false)
+                    .where('isPrivate',
+                        isEqualTo: false) // Exclude private posts
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
+
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    print("No posts found!"); // Debugging
                     return const Center(child: Text("No posts available."));
                   }
+
+                  print(
+                      "Fetched ${snapshot.data!.docs.length} posts."); // Debugging
+
                   return Column(
                     children: snapshot.data!.docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      return OutfitPost(
-                        postId: data['postId'] ?? '',
-                        imageUrl: data['imageUrl'] ?? '',
-                        description: data['description'] ?? '',
-                        userId: data['userId'] ?? '',
-                        userName: data['userName'] ?? 'Unknown',
-                        profileImageUrl: data['profileImageUrl'] ?? '',
-                        isPrivate: data['isPrivate'] ?? false,
-                        forSale: data['forSale'] ??
-                            data['forSale'] ??
-                            false, // ✅ Ensure correct field
-                        price: (data['price'] ?? 0.0)
-                            .toDouble(), // ✅ Ensure numeric type
+                      final data = doc.data() as Map<String, dynamic>?;
+
+                      if (data == null || !data.containsKey('imageUrl')) {
+                        print("Invalid post data: ${doc.id}");
+                        return SizedBox.shrink();
+                      }
+
+                      return GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return Dialog(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(25),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(15),
+                                    child: CachedNetworkImage(
+                                      imageUrl: data['imageUrl'] ??
+                                          '', // ✅ Use imageUrl directly
+                                      placeholder: (context, url) =>
+                                          CircularProgressIndicator(),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(Icons.error),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        child: OutfitPost(
+                          postId: data['postId'] ?? '',
+                          imageUrl: data['imageUrl'] ?? '',
+                          description: data['description'] ?? '',
+                          userId: data['userId'] ?? '',
+                          userName: data['userName'] ?? 'Unknown',
+                          profileImageUrl: data['profileImageUrl'] ?? '',
+                          isPrivate: data['isPrivate'] ?? false,
+                          forSale: data['forSale'] ??
+                              data['forSale'] ??
+                              false, // ✅ Ensure correct field
+                          price: (data['price'] ?? 0.0).toDouble(),
+                        ),
                       );
                     }).toList(),
                   );
                 },
-              ),
+              )
             ],
           ),
+          if (_expandedImageUrl != null)
+            GestureDetector(
+              onTap: _closeExpandedImage,
+              child: Container(
+                color: Colors.black.withOpacity(0.8),
+                alignment: Alignment.center,
+                child: Image.network(
+                  _expandedImageUrl!,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
           Positioned(
             bottom: 20,
             right: 20,
