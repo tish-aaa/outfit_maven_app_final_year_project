@@ -73,7 +73,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 class CustomDrawer extends StatelessWidget {
   Future<void> openFile() async {
-    const String filePath = 'assets/manual.pdf'; // Correct asset path
+    const String filePath = 'assets/user_manual.pdf'; // Correct asset path
 
     try {
       // Load the file as ByteData from assets

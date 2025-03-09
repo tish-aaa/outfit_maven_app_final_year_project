@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import 'navbar.dart';
 import 'post_card.dart';
 import 'providers/user_provider.dart';
-import 'navigation/back_navigation_handler.dart'; 
+import 'navigation/back_navigation_handler.dart';
+import 'package:cached_network_image/cached_network_image.dart'; // Import for image caching
 
 class LikedInspoPage extends StatefulWidget {
   const LikedInspoPage({super.key});
@@ -48,30 +49,65 @@ class _LikedInspoPageState extends State<LikedInspoPage> {
                     children: snapshot.data!.docs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
 
-                      if (data['isPrivate'] ?? false)
-                        return const SizedBox.shrink();
+                      if (data['isPrivate'] ?? false) return const SizedBox.shrink();
 
-                      return OutfitPost(
-                        postId: data['postId'] ?? '', // Default to empty string
-                        imageUrl: data['imageUrl'] ?? '', // Prevent null errors
-                        description: data['description'] ??
-                            '', // Default to empty string
-                        userId: data['userId'] ?? '', // Default to empty string
-                        userName:
-                            data['userName'] ?? 'Unknown', // Fallback name
-                        profileImageUrl: data['profileImageUrl'] ??
-                            '', // Prevent null errors
-                        isPrivate:
-                            data['isPrivate'] ?? false, // Default to false
-                        forSale: data['forSale'] ?? false, // Default to false
-                        price: (data['price'] ?? 0.0)
-                            .toDouble(), // Ensure numeric type
+                      return GestureDetector(
+                        onTap: () {
+                          _showExpandedImage(context, data['imageUrl'] ?? '');
+                        },
+                        child: OutfitPost(
+                          postId: data['postId'] ?? '',
+                          imageUrl: data['imageUrl'] ?? '',
+                          description: data['description'] ?? '',
+                          userId: data['userId'] ?? '',
+                          userName: data['userName'] ?? 'Unknown',
+                          profileImageUrl: data['profileImageUrl'] ?? '',
+                          isPrivate: data['isPrivate'] ?? false,
+                          forSale: data['forSale'] ?? false,
+                          price: (data['price'] ?? 0.0).toDouble(),
+                        ),
                       );
                     }).toList(),
                   );
                 },
               ),
       ),
+    );
+  }
+
+  void _showExpandedImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                placeholder: (context, url) => const CircularProgressIndicator(),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
