@@ -47,7 +47,7 @@ flutter:
     - assets/contact_us.json
     - assets/outfit_maven_logo.png
     - assets/quote.jpg
-    - assets/manual.pdf
+    - assets/user_manual.pdf
     - assets/quiz/
     - assets/quiz_results/
     - assets/quiz/weather_quiz.jpeg
