@@ -15,42 +15,38 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
   Map<int, String> selectedAnswers = {};
 
   void _showResult() {
-    print("Get Recommendation button clicked!"); // Debugging
     if (selectedAnswers.length < widget.quiz.questions.length) {
+      print("Selected Answers: $selectedAnswers");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Please answer all questions!")),
       );
       return;
     }
 
-    Map<String, int> answerCount = {"A": 0, "B": 0, "C": 0, "D": 0};
+    Map<String, int> answerCount = {};
 
+    // Count occurrences of each answer type (A, B, C, D)
     for (var answer in selectedAnswers.values) {
-      if (answer.startsWith("Happy") ||
-          answer.startsWith("Sunny") ||
-          answer.startsWith("Casual") ||
-          answer.startsWith("Super social")) {
-        answerCount["A"] = (answerCount["A"] ?? 0) + 1;
-      } else if (answer.startsWith("Calm") ||
-          answer.startsWith("Cool") ||
-          answer.startsWith("Chic") ||
-          answer.startsWith("A little social")) {
-        answerCount["B"] = (answerCount["B"] ?? 0) + 1;
-      } else if (answer.startsWith("Moody") ||
-          answer.startsWith("Rainy") ||
-          answer.startsWith("Edgy") ||
-          answer.startsWith("Not much")) {
-        answerCount["C"] = (answerCount["C"] ?? 0) + 1;
-      } else {
-        answerCount["D"] = (answerCount["D"] ?? 0) + 1;
-      }
+      String answerType = answer
+          .substring(0, 1)
+          .toUpperCase(); // Extract first letter (A, B, C, D)
+      answerCount[answerType] = (answerCount[answerType] ?? 0) + 1;
     }
 
-    String highestCategory =
-        answerCount.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+    // Debugging prints
+    print("Selected Answers: $selectedAnswers");
+    print("Answer Count: $answerCount");
 
+    // Sort answer count to determine the most selected category
+    List<MapEntry<String, int>> sortedEntries = answerCount.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value)); // Sort in descending order
+
+    String highestCategory = sortedEntries.first.key; // Most chosen category
+
+    print("Most Selected: $highestCategory");
+
+    // Ensure a valid result exists
     if (!widget.quiz.results.containsKey(highestCategory)) {
-      print("Error: No matching result for category $highestCategory");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Unexpected error! No result found.")),
       );
@@ -58,8 +54,6 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
     }
 
     QuizResult result = widget.quiz.results[highestCategory]!;
-
-    print("Opening dialog for result: ${result.description}"); // Debugging
 
     showDialog(
       context: context,
@@ -163,11 +157,13 @@ class _QuizDetailPageState extends State<QuizDetailPage> {
                                 fontSize: 16, color: Color(0xFF1D8A7A))),
                         leading: Radio<String>(
                           value: option,
-                          groupValue: selectedAnswers[index],
+                          groupValue: selectedAnswers[index] ??
+                              "", // Ensure it's initialized
                           activeColor: Color(0xFF1DCFCA),
                           onChanged: (value) {
                             setState(() {
-                              selectedAnswers[index] = value!;
+                              selectedAnswers[index] = value ??
+                                  ""; // Assign only to current question
                             });
                           },
                         ),
